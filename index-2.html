@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CollegeMatch — Find Your Best-Fit School</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;1,500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <!-- LANDING -->
+  <section id="screen-landing" class="screen active">
+    <div class="landing-bg">
+      <div class="bg-circle c1"></div>
+      <div class="bg-circle c2"></div>
+      <div class="bg-circle c3"></div>
+    </div>
+    <nav class="nav-bar">
+      <div class="logo">CollegeMatch</div>
+    </nav>
+    <div class="landing-content">
+      <div class="landing-eyebrow">Free · No account needed · 2 minutes</div>
+      <h1 class="landing-title">Find the college<br /><em>built for you.</em></h1>
+      <p class="landing-sub">Answer 6 questions. Get a personalized list of schools matched to your goals, budget, location, and vibe — with clear explanations for every recommendation.</p>
+      <div class="trust-row">
+        <span class="trust-item">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6.5" stroke="currentColor" stroke-opacity="0.4"/><path d="M4 7l2 2 4-4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          80+ colleges in our database
+        </span>
+        <span class="trust-item">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6.5" stroke="currentColor" stroke-opacity="0.4"/><path d="M4 7l2 2 4-4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Personalized match scores
+        </span>
+        <span class="trust-item">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6.5" stroke="currentColor" stroke-opacity="0.4"/><path d="M4 7l2 2 4-4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          "Why this school" for every result
+        </span>
+      </div>
+      <button class="btn-primary" id="btn-start" onclick="startSurvey()">
+        Find my matches
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+    <div class="landing-scroll-hint">Scroll to see all your results after completing the survey</div>
+  </section>
+
+  <!-- SURVEY -->
+  <section id="screen-survey" class="screen">
+    <nav class="nav-bar survey-nav">
+      <div class="logo">CollegeMatch</div>
+      <button class="btn-ghost" onclick="restart()">Start over</button>
+    </nav>
+    <div class="survey-wrap">
+      <div class="progress-track">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+      <div class="step-label" id="step-label"></div>
+      <h2 class="q-text" id="q-text"></h2>
+      <div class="options-grid" id="options-grid"></div>
+      <div class="survey-footer">
+        <button class="btn-ghost" id="btn-back" onclick="goBack()">← Back</button>
+        <button class="btn-primary" id="btn-next" onclick="goNext()" disabled>
+          <span id="next-label">Continue</span>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- RESULTS -->
+  <section id="screen-results" class="screen">
+    <nav class="nav-bar">
+      <div class="logo">CollegeMatch</div>
+      <button class="btn-ghost" onclick="restart()">← Retake survey</button>
+    </nav>
+    <div class="results-wrap">
+      <div class="results-header">
+        <div class="results-eyebrow">Your personalized results</div>
+        <h2 class="results-title" id="results-title">Your top college matches</h2>
+        <p class="results-sub">Based on your major interest, location, size, budget, GPA, and campus vibe preferences.</p>
+      </div>
+
+      <div class="results-grid" id="results-grid"></div>
+
+      <div class="feedback-section">
+        <div class="feedback-card">
+          <h3>How useful were these results?</h3>
+          <p>Your feedback helps improve match accuracy for everyone.</p>
+          <div class="star-row" id="star-row"></div>
+          <div class="feedback-thanks" id="feedback-thanks" style="display:none;">Thanks for your feedback!</div>
+        </div>
+      </div>
+
+      <div class="results-footer">
+        <button class="btn-primary" onclick="restart()">Retake with different answers</button>
+        <p class="disclaimer">Results are for exploration only. Always research schools directly and speak with a counselor.</p>
+      </div>
+    </div>
+  </section>
+
+  <script src="script.js"></script>
+</body>
+</html>
