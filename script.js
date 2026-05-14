@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 /* ════════════════════════════════════════════════════════════════
    CollegeMatch — script.js
    Survey flow, matching algorithm, and results rendering
@@ -44,10 +45,55 @@ const QUESTIONS = [
       { value: 'low',    label: 'Very important',   sub: 'Looking for in-state publics, scholarships, or need-blind schools' },
       { value: 'medium', label: 'Somewhat important', sub: 'Cost matters but I have some flexibility' },
       { value: 'high',   label: 'Not a major factor', sub: 'I\'m open to any school regardless of sticker price' },
+=======
+/* ==========================================================================
+   CollegeMatch — script.js
+   ========================================================================== */
+
+const COLLEGE_SCORECARD_API_KEY = 'YOUR_API_KEY_HERE';
+
+const API_BASE =
+  'https://api.data.gov/ed/collegescorecard/v1/schools';
+
+const API_FIELDS = [
+  'school.name',
+  'school.city',
+  'school.state',
+  'school.school_url',
+  'latest.student.size',
+  'latest.admissions.admission_rate.overall',
+  'latest.admissions.sat_scores.average.overall',
+  'latest.cost.avg_net_price.overall',
+  'latest.completion.rate_suppressed.overall',
+  'latest.student.demographics.race_ethnicity.minority',
+  'latest.earnings.10_yrs_after_entry.median',
+  'latest.academics.program_available.engineering',
+  'latest.academics.program_available.computer',
+  'latest.academics.program_available.business_marketing',
+  'latest.academics.program_available.biological',
+  'latest.academics.program_available.psychology',
+  'latest.academics.program_available.education',
+  'latest.academics.program_available.visual_performing'
+].join(',');
+
+const QUESTIONS = [
+  {
+    key: 'major',
+    text: 'What field are you most interested in studying?',
+    options: [
+      'Computer Science',
+      'Engineering',
+      'Business',
+      'Biology',
+      'Psychology',
+      'Education',
+      'Art & Design'
+>>>>>>> 981ebb6 (Push)
     ]
   },
   {
     key: 'gpa',
+<<<<<<< HEAD
     text: 'What\'s your approximate high school GPA?',
     opts: [
       { value: 'high',     label: '3.8 and above',  sub: 'Highly competitive applicant' },
@@ -64,10 +110,93 @@ const QUESTIONS = [
       { value: 'balanced',  label: 'Balanced',               sub: 'Strong academics plus a real social life' },
       { value: 'social',    label: 'Vibrant social scene',   sub: 'Greek life, big sports culture, active parties' },
       { value: 'community', label: 'Tight-knit community',   sub: 'Everyone knows each other, collaborative not competitive' },
+=======
+    text: 'What is your approximate GPA?',
+    options: ['4.0+', '3.8–3.99', '3.5–3.79', '3.2–3.49', 'Below 3.2']
+  },
+  {
+    key: 'region',
+    text: 'Which region do you prefer?',
+    options: ['West', 'Northeast', 'South', 'Midwest', 'No preference']
+  },
+  {
+    key: 'budget',
+    text: 'What annual net price feels comfortable?',
+    options: [
+      'Under $20,000',
+      '$20,000–$35,000',
+      '$35,000–$55,000',
+      '$55,000+',
+      'Flexible'
+    ]
+  },
+  {
+    key: 'size',
+    text: 'What campus size do you prefer?',
+    options: ['Small', 'Medium', 'Large', 'No preference']
+  },
+  {
+    key: 'weather',
+    text: 'What weather do you prefer?',
+    options: [
+      'Warm and sunny',
+      'Four seasons',
+      'Cold and snowy',
+      'No preference'
+    ]
+  },
+  {
+    key: 'social',
+    text: 'What kind of social environment do you want?',
+    options: [
+      'Party-oriented',
+      'Balanced social life',
+      'Academically focused',
+      'Quiet and low-key'
+    ]
+  },
+  {
+    key: 'distance',
+    text: 'How far from home would you like to be?',
+    options: [
+      'Close to home',
+      'A few hours away',
+      'Across the country',
+      'No preference'
+    ]
+  },
+  {
+    key: 'diversity',
+    text: 'How important is campus diversity?',
+    options: [
+      'Very important',
+      'Somewhat important',
+      'Not important'
+    ]
+  },
+  {
+    key: 'internships',
+    text: 'How important are internship opportunities?',
+    options: [
+      'Very important',
+      'Somewhat important',
+      'Not important'
+    ]
+  },
+  {
+    key: 'selectivity',
+    text: 'What type of admissions profile are you looking for?',
+    options: [
+      'Highly selective',
+      'Moderately selective',
+      'Accessible',
+      'No preference'
+>>>>>>> 981ebb6 (Push)
     ]
   }
 ];
 
+<<<<<<< HEAD
 /* ─── College Database (80+ schools) ───────────────────────────── */
 const COLLEGES = [
   // ── Northeast ──
@@ -240,10 +369,225 @@ function goNext() {
 function goBack() {
   if (currentQ > 0) {
     currentQ--;
+=======
+const FALLBACK_COLLEGES = [
+  {
+    name: 'Stanford University',
+    city: 'Stanford',
+    state: 'CA',
+    website: 'https://www.stanford.edu',
+    tuition: 62000,
+    netPrice: 21000,
+    acceptanceRate: 0.04,
+    satAverage: 1520,
+    size: 17700,
+    graduationRate: 0.95,
+    diversity: 0.65,
+    earnings: 125000,
+    programs: ['Computer Science', 'Engineering', 'Business']
+  },
+  {
+    name: 'University of California-San Diego',
+    city: 'La Jolla',
+    state: 'CA',
+    website: 'https://www.ucsd.edu',
+    tuition: 15000,
+    netPrice: 18000,
+    acceptanceRate: 0.24,
+    satAverage: 1400,
+    size: 43000,
+    graduationRate: 0.88,
+    diversity: 0.78,
+    earnings: 90000,
+    programs: ['Computer Science', 'Biology', 'Engineering']
+  },
+  {
+    name: 'University of Michigan-Ann Arbor',
+    city: 'Ann Arbor',
+    state: 'MI',
+    website: 'https://www.umich.edu',
+    tuition: 18000,
+    netPrice: 19000,
+    acceptanceRate: 0.18,
+    satAverage: 1430,
+    size: 52000,
+    graduationRate: 0.92,
+    diversity: 0.52,
+    earnings: 85000,
+    programs: ['Engineering', 'Business', 'Psychology']
+  },
+  {
+    name: 'University of Texas at Austin',
+    city: 'Austin',
+    state: 'TX',
+    website: 'https://www.utexas.edu',
+    tuition: 12000,
+    netPrice: 17000,
+    acceptanceRate: 0.31,
+    satAverage: 1370,
+    size: 52000,
+    graduationRate: 0.87,
+    diversity: 0.70,
+    earnings: 82000,
+    programs: ['Computer Science', 'Business', 'Engineering']
+  }
+];
+
+const CAMPUS_IMAGES = {
+  'Stanford University':
+    'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b6/Sunset_at_the_Memorial_Church%2C_Stanford_University.jpg/1280px-Sunset_at_the_Memorial_Church%2C_Stanford_University.jpg',
+
+  'University of California-San Diego':
+    'https://upload.wikimedia.org/wikipedia/commons/thumb/5/58/Geisel_Library_%28University_of_California%2C_San_Diego%29.jpg/1280px-Geisel_Library_%28University_of_California%2C_San_Diego%29.jpg',
+
+  'University of Michigan-Ann Arbor':
+    'https://upload.wikimedia.org/wikipedia/commons/thumb/0/06/University_of_Michigan_Law_Quadrangle.jpg/1280px-University_of_Michigan_Law_Quadrangle.jpg',
+
+  'University of Texas at Austin':
+    'https://upload.wikimedia.org/wikipedia/commons/thumb/4/48/UT_Austin_Tower.jpg/1280px-UT_Austin_Tower.jpg'
+};
+
+const state = {
+  currentQuestion: 0,
+  answers: {},
+  results: [],
+  compare: [],
+  rating: 0
+};
+
+const $ = (id) => document.getElementById(id);
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach((s) => {
+    s.classList.remove('active');
+  });
+
+  $(id).classList.add('active');
+
+  window.scrollTo({
+    top: 0,
+    behavior: 'smooth'
+  });
+}
+
+function startSurvey() {
+  state.currentQuestion = 0;
+  state.answers = {};
+
+  renderQuestion();
+
+  showScreen('screen-survey');
+}
+
+function restart() {
+  state.results = [];
+  state.compare = [];
+
+  showScreen('screen-landing');
+}
+
+function renderQuestion() {
+  const question = QUESTIONS[state.currentQuestion];
+
+  $('q-text').textContent = question.text;
+
+  const grid = $('options-grid');
+  grid.innerHTML = '';
+
+  question.options.forEach((option) => {
+    const item = document.createElement('div');
+
+    item.className = 'option-item';
+
+    if (state.answers[question.key] === option) {
+      item.classList.add('selected');
+    }
+
+    item.innerHTML = `
+      <div class="option-radio"></div>
+      <div class="option-label">${option}</div>
+    `;
+
+    item.addEventListener('click', () => {
+      state.answers[question.key] = option;
+
+      renderQuestion();
+    });
+
+    grid.appendChild(item);
+  });
+
+  $('btn-next').disabled = !state.answers[question.key];
+
+  $('next-label').textContent =
+    state.currentQuestion === QUESTIONS.length - 1
+      ? 'Find My Matches'
+      : 'Continue';
+
+  $('btn-back').style.visibility =
+    state.currentQuestion === 0 ? 'hidden' : 'visible';
+
+  updateProgress();
+}
+
+function updateProgress() {
+  const total = QUESTIONS.length;
+
+  const current = state.currentQuestion + 1;
+
+  const pct = Math.round((state.currentQuestion / total) * 100);
+
+  $('step-label').textContent =
+    `Question ${current} of ${total}`;
+
+  $('progress-pct').textContent =
+    `${pct}% Complete`;
+
+  $('progress-fill').style.width = `${pct}%`;
+
+  const dots = $('progress-dots');
+
+  dots.innerHTML = '';
+
+  for (let i = 0; i < total; i++) {
+    const dot = document.createElement('div');
+
+    dot.className = 'progress-dot';
+
+    if (i < state.currentQuestion) {
+      dot.classList.add('done');
+    }
+
+    if (i === state.currentQuestion) {
+      dot.classList.add('active');
+    }
+
+    dots.appendChild(dot);
+  }
+}
+
+function goNext() {
+  if (state.currentQuestion < QUESTIONS.length - 1) {
+    state.currentQuestion++;
+
+    renderQuestion();
+
+    return;
+  }
+
+  generateMatches();
+}
+
+function goBack() {
+  if (state.currentQuestion > 0) {
+    state.currentQuestion--;
+
+>>>>>>> 981ebb6 (Push)
     renderQuestion();
   }
 }
 
+<<<<<<< HEAD
 /* ─── Matching Algorithm ─────────────────────────────────────────── */
 const WEIGHTS = {
   major:  35,
@@ -399,10 +743,404 @@ function showResults() {
           Not for me
         </button>
       </div>`;
+=======
+async function generateMatches() {
+  showScreen('screen-loading');
+
+  await animateLoading();
+
+  const colleges = await fetchCollegeData();
+
+  const scored = colleges.map((college) => {
+    return scoreCollege(college);
+  });
+
+  scored.sort((a, b) => b.matchScore - a.matchScore);
+
+  state.results = scored.slice(0, 5);
+
+  renderResults();
+
+  showScreen('screen-results');
+}
+
+async function animateLoading() {
+  const titles = [
+    'Analyzing your academic profile...',
+    'Comparing your GPA to admissions data...',
+    'Scoring preference compatibility...',
+    'Generating personalized recommendations...'
+  ];
+
+  for (let i = 0; i < 5; i++) {
+    document.querySelectorAll('.load-step')
+      .forEach((step, idx) => {
+        step.classList.toggle('active', idx === i);
+
+        step.classList.toggle('done', idx < i);
+      });
+
+    $('loading-title').textContent =
+      titles[Math.min(i, titles.length - 1)];
+
+    await delay(700);
+  }
+}
+
+async function fetchCollegeData() {
+  if (
+    !COLLEGE_SCORECARD_API_KEY ||
+    COLLEGE_SCORECARD_API_KEY === 'YOUR_API_KEY_HERE'
+  ) {
+    return FALLBACK_COLLEGES;
+  }
+
+  try {
+    const url = new URL(API_BASE);
+
+    url.searchParams.set(
+      'api_key',
+      COLLEGE_SCORECARD_API_KEY
+    );
+
+    url.searchParams.set('fields', API_FIELDS);
+
+    url.searchParams.set('per_page', '40');
+
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      throw new Error('API request failed');
+    }
+
+    const data = await response.json();
+
+    return data.results.map(normalizeCollege)
+      .filter(Boolean);
+
+  } catch (error) {
+    console.error(error);
+
+    return FALLBACK_COLLEGES;
+  }
+}
+
+function normalizeCollege(raw) {
+  try {
+    const programs = [];
+
+    if (raw['latest.academics.program_available.computer']) {
+      programs.push('Computer Science');
+    }
+
+    if (raw['latest.academics.program_available.engineering']) {
+      programs.push('Engineering');
+    }
+
+    if (raw['latest.academics.program_available.business_marketing']) {
+      programs.push('Business');
+    }
+
+    if (raw['latest.academics.program_available.biological']) {
+      programs.push('Biology');
+    }
+
+    if (raw['latest.academics.program_available.psychology']) {
+      programs.push('Psychology');
+    }
+
+    if (raw['latest.academics.program_available.education']) {
+      programs.push('Education');
+    }
+
+    return {
+      name: raw['school.name'],
+      city: raw['school.city'],
+      state: raw['school.state'],
+      website: raw['school.school_url']
+        ? `https://${raw['school.school_url'].replace(/^https?:\/\//, '')}`
+        : '',
+      netPrice:
+        raw['latest.cost.avg_net_price.overall'],
+      acceptanceRate:
+        raw['latest.admissions.admission_rate.overall'],
+      satAverage:
+        raw['latest.admissions.sat_scores.average.overall'],
+      size:
+        raw['latest.student.size'],
+      graduationRate:
+        raw['latest.completion.rate_suppressed.overall'],
+      diversity:
+        raw['latest.student.demographics.race_ethnicity.minority'],
+      earnings:
+        raw['latest.earnings.10_yrs_after_entry.median'],
+      programs
+    };
+
+  } catch {
+    return null;
+  }
+}
+
+function scoreCollege(college) {
+  let score = 50;
+
+  const factors = [];
+
+  if (
+    college.programs.includes(state.answers.major)
+  ) {
+    score += 15;
+
+    factors.push({
+      label: state.answers.major,
+      className: 'factor-major'
+    });
+  }
+
+  const budgetMax = getBudgetMax(state.answers.budget);
+
+  if (
+    college.netPrice &&
+    college.netPrice <= budgetMax
+  ) {
+    score += 10;
+
+    factors.push({
+      label: 'Affordable',
+      className: 'factor-budget'
+    });
+  }
+
+  if (
+    state.answers.diversity === 'Very important' &&
+    college.diversity > 0.6
+  ) {
+    score += 6;
+
+    factors.push({
+      label: 'Diverse Campus',
+      className: 'factor-diversity'
+    });
+  }
+
+  if (
+    state.answers.internships === 'Very important' &&
+    college.earnings > 80000
+  ) {
+    score += 8;
+
+    factors.push({
+      label: 'Strong Career Outcomes',
+      className: 'factor-internship'
+    });
+  }
+
+  if (
+    matchesSizePreference(
+      college.size,
+      state.answers.size
+    )
+  ) {
+    score += 6;
+
+    factors.push({
+      label: 'Ideal Size',
+      className: 'factor-size'
+    });
+  }
+
+  score = Math.max(45, Math.min(99, score));
+
+  const admissionsCategory =
+    classifyAdmissions(
+      getNumericGPA(state.answers.gpa),
+      college.acceptanceRate
+    );
+
+  return {
+    ...college,
+    image: getCampusImage(college.name),
+    matchScore: score,
+    admissionsCategory,
+    factors,
+    explanation:
+      generateExplanation(
+        college,
+        score,
+        admissionsCategory
+      )
+  };
+}
+
+function generateExplanation(
+  college,
+  score,
+  category
+) {
+  return `
+    ${college.name} is a strong fit because it aligns with your interest in ${state.answers.major}.
+    The school matches several of your preferences including campus size, affordability,
+    and career outcomes. Based on your academic profile, this school is considered
+    a ${category.toLowerCase()} option.
+  `;
+}
+
+function renderResults() {
+  const grid = $('results-grid');
+
+  grid.innerHTML = '';
+
+  state.results.forEach((college, index) => {
+
+    const card = document.createElement('div');
+
+    card.className = 'college-card';
+
+    const badgeClass =
+      college.matchScore >= 90
+        ? 'match-high'
+        : college.matchScore >= 75
+        ? 'match-med'
+        : 'match-low';
+
+    card.innerHTML = `
+      <div class="card-layout">
+
+        <div class="card-content">
+
+          <div class="card-rank">
+            #${index + 1} Recommended Match
+          </div>
+
+          <div class="card-header">
+
+            <div>
+              <div class="card-name">
+                ${college.name}
+              </div>
+
+              <div class="card-location">
+                ${college.city}, ${college.state}
+              </div>
+            </div>
+
+            <div class="match-badge ${badgeClass}">
+              <span class="pct">
+                ${college.matchScore}%
+              </span>
+
+              <span class="pct-label">
+                Match
+              </span>
+
+              <span class="match-category">
+                ${college.admissionsCategory}
+              </span>
+            </div>
+
+          </div>
+
+          <hr class="card-divider" />
+
+          <div class="why-section">
+
+            <div class="why-label">
+              Why this school fits
+            </div>
+
+            <div class="why-text">
+              ${college.explanation}
+            </div>
+
+            <div class="why-factors">
+
+              ${college.factors.map((factor) => `
+                <span class="factor-chip ${factor.className}">
+                  ${factor.label}
+                </span>
+              `).join('')}
+
+            </div>
+
+          </div>
+
+          <div class="card-stats">
+
+            ${renderStat(
+              'Net Price',
+              formatCurrency(college.netPrice)
+            )}
+
+            ${renderStat(
+              'Acceptance',
+              formatPercent(college.acceptanceRate)
+            )}
+
+            ${renderStat(
+              'Graduation',
+              formatPercent(college.graduationRate)
+            )}
+
+            ${renderStat(
+              'Earnings',
+              formatCurrency(college.earnings)
+            )}
+
+          </div>
+
+          <div class="card-footer">
+
+            <button
+              class="compare-btn ${state.compare.includes(college.name) ? 'comparing' : ''}"
+              onclick="toggleCompare('${college.name}')"
+            >
+              Compare
+            </button>
+
+            ${college.website
+              ? `
+                <a
+                  class="website-btn"
+                  href="${college.website}"
+                  target="_blank"
+                >
+                  Visit Website
+                </a>
+              `
+              : ''
+            }
+
+          </div>
+
+        </div>
+
+        <div class="card-image">
+
+          ${college.image
+            ? `
+              <img
+                src="${college.image}"
+                alt="${college.name}"
+              />
+            `
+            : `
+              <div class="card-image-placeholder">
+                🎓
+              </div>
+            `
+          }
+
+        </div>
+
+      </div>
+    `;
+>>>>>>> 981ebb6 (Push)
 
     grid.appendChild(card);
   });
 
+<<<<<<< HEAD
   // Build star rating
   const starRow = document.getElementById('star-row');
   starRow.innerHTML = '';
@@ -445,3 +1183,312 @@ function restart() {
   Object.keys(answers).forEach(k => delete answers[k]);
   showScreen('landing');
 }
+=======
+  updateCompareBar();
+
+  renderStars();
+}
+
+function toggleCompare(name) {
+  const index = state.compare.indexOf(name);
+
+  if (index >= 0) {
+    state.compare.splice(index, 1);
+  } else {
+    state.compare.push(name);
+  }
+
+  renderResults();
+}
+
+function updateCompareBar() {
+  $('compare-count').textContent =
+    state.compare.length;
+
+  $('btn-compare-bar').style.display =
+    state.compare.length >= 2
+      ? 'inline-flex'
+      : 'none';
+}
+
+function openCompareModal() {
+  const selected =
+    state.results.filter((school) =>
+      state.compare.includes(school.name)
+    );
+
+  const body = $('compare-modal-body');
+
+  body.innerHTML = `
+    <table class="compare-table">
+
+      <thead>
+
+        <tr>
+          <th>Metric</th>
+
+          ${selected.map((school) => `
+            <th>
+              ${school.name}
+            </th>
+          `).join('')}
+
+        </tr>
+
+      </thead>
+
+      <tbody>
+
+        ${compareRow(
+          'Match Score',
+          selected.map((s) => `${s.matchScore}%`)
+        )}
+
+        ${compareRow(
+          'Net Price',
+          selected.map((s) =>
+            formatCurrency(s.netPrice)
+          )
+        )}
+
+        ${compareRow(
+          'Acceptance Rate',
+          selected.map((s) =>
+            formatPercent(s.acceptanceRate)
+          )
+        )}
+
+        ${compareRow(
+          'Graduation Rate',
+          selected.map((s) =>
+            formatPercent(s.graduationRate)
+          )
+        )}
+
+        ${compareRow(
+          'Student Population',
+          selected.map((s) =>
+            formatNumber(s.size)
+          )
+        )}
+
+        ${compareRow(
+          'Median Earnings',
+          selected.map((s) =>
+            formatCurrency(s.earnings)
+          )
+        )}
+
+      </tbody>
+
+    </table>
+  `;
+
+  $('compare-modal').style.display = 'flex';
+}
+
+function compareRow(label, values) {
+  return `
+    <tr>
+
+      <td>${label}</td>
+
+      ${values.map((value) => `
+        <td>${value}</td>
+      `).join('')}
+
+    </tr>
+  `;
+}
+
+function closeCompareModal() {
+  $('compare-modal').style.display = 'none';
+}
+
+function handleModalBackdrop(event) {
+  if (event.target.id === 'compare-modal') {
+    closeCompareModal();
+  }
+}
+
+function renderStars() {
+  const row = $('star-row');
+
+  row.innerHTML = '';
+
+  for (let i = 1; i <= 5; i++) {
+
+    const btn = document.createElement('button');
+
+    btn.className = 'star-btn';
+
+    btn.innerHTML = '★';
+
+    if (i <= state.rating) {
+      btn.classList.add('lit');
+    }
+
+    btn.addEventListener('click', () => {
+      state.rating = i;
+
+      renderStars();
+
+      $('feedback-thanks').style.display =
+        'block';
+    });
+
+    row.appendChild(btn);
+  }
+}
+
+function formatCurrency(value) {
+  if (!value) return 'N/A';
+
+  return new Intl.NumberFormat(
+    'en-US',
+    {
+      style: 'currency',
+      currency: 'USD',
+      maximumFractionDigits: 0
+    }
+  ).format(value);
+}
+
+function formatPercent(value) {
+  if (!value) return 'N/A';
+
+  return `${Math.round(value * 100)}%`;
+}
+
+function formatNumber(value) {
+  if (!value) return 'N/A';
+
+  return new Intl.NumberFormat('en-US')
+    .format(value);
+}
+
+function renderStat(label, value) {
+  return `
+    <div>
+
+      <span class="stat-label">
+        ${label}
+      </span>
+
+      <span class="stat-value">
+        ${value}
+      </span>
+
+    </div>
+  `;
+}
+
+function getBudgetMax(answer) {
+  switch (answer) {
+    case 'Under $20,000':
+      return 20000;
+
+    case '$20,000–$35,000':
+      return 35000;
+
+    case '$35,000–$55,000':
+      return 55000;
+
+    default:
+      return Infinity;
+  }
+}
+
+function getNumericGPA(answer) {
+  switch (answer) {
+    case '4.0+':
+      return 4.0;
+
+    case '3.8–3.99':
+      return 3.9;
+
+    case '3.5–3.79':
+      return 3.65;
+
+    case '3.2–3.49':
+      return 3.35;
+
+    default:
+      return 3.0;
+  }
+}
+
+function classifyAdmissions(
+  gpa,
+  acceptanceRate
+) {
+  if (
+    gpa >= 3.8 &&
+    acceptanceRate > 0.25
+  ) {
+    return 'Safety';
+  }
+
+  if (
+    gpa >= 3.5 &&
+    acceptanceRate > 0.10
+  ) {
+    return 'Target';
+  }
+
+  return 'Reach';
+}
+
+function matchesSizePreference(
+  size,
+  preference
+) {
+  if (preference === 'No preference') {
+    return true;
+  }
+
+  if (preference === 'Small') {
+    return size < 5000;
+  }
+
+  if (preference === 'Medium') {
+    return size >= 5000 && size <= 15000;
+  }
+
+  if (preference === 'Large') {
+    return size > 15000;
+  }
+
+  return true;
+}
+
+function getCampusImage(name) {
+  return CAMPUS_IMAGES[name] || '';
+}
+
+function delay(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
+document.addEventListener(
+  'DOMContentLoaded',
+  () => {
+
+    renderStars();
+
+    window.startSurvey = startSurvey;
+    window.restart = restart;
+    window.goNext = goNext;
+    window.goBack = goBack;
+    window.toggleCompare = toggleCompare;
+    window.openCompareModal =
+      openCompareModal;
+    window.closeCompareModal =
+      closeCompareModal;
+    window.handleModalBackdrop =
+      handleModalBackdrop;
+  }
+);
+>>>>>>> 981ebb6 (Push)
