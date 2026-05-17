@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CollegeMatch — Find Your Best-Fit School</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;1,500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <!-- ══════════════════════════════════════════════
+       LANDING
+  ══════════════════════════════════════════════ -->
+  <section id="screen-landing" class="screen active">
+    <div class="landing-bg">
+      <div class="bg-circle c1"></div>
+      <div class="bg-circle c2"></div>
+      <div class="bg-circle c3"></div>
+    </div>
+
+    <nav class="nav-bar">
+      <div class="logo">CollegeMatch</div>
+    </nav>
+
+    <div class="landing-content">
+      <div class="landing-eyebrow">Free · No account needed · 2 minutes</div>
+      <h1 class="landing-title">Find the college<br /><em>built for you.</em></h1>
+      <p class="landing-sub">Answer 11 questions. Get a personalized list of real schools matched to your goals, budget, location, and vibe — powered by U.S. Department of Education data and AI explanations.</p>
+      <div class="trust-row">
+        <span class="trust-item">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6.5" stroke="currentColor" stroke-opacity="0.4"/><path d="M4 7l2 2 4-4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Powered by College Scorecard API
+        </span>
+        <span class="trust-item">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6.5" stroke="currentColor" stroke-opacity="0.4"/><path d="M4 7l2 2 4-4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          AI-generated match explanations
+        </span>
+        <span class="trust-item">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6.5" stroke="currentColor" stroke-opacity="0.4"/><path d="M4 7l2 2 4-4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Side-by-side comparison tool
+        </span>
+      </div>
+      <button class="btn-primary" id="btn-start" onclick="startSurvey()">
+        Find my matches
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+
+    <!-- Real campus photo strip -->
+    <div class="campus-strip">
+      <div class="campus-strip-inner" id="campus-strip-inner">
+        <div class="campus-img-wrap">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b6/Sunset_at_the_Memorial_Church%2C_Stanford_University.jpg/640px-Sunset_at_the_Memorial_Church%2C_Stanford_University.jpg" alt="Stanford University" loading="lazy" />
+          <span class="campus-img-label">Stanford</span>
+        </div>
+        <div class="campus-img-wrap">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/MIT_Dome_night1_Edit.jpg/640px-MIT_Dome_night1_Edit.jpg" alt="MIT" loading="lazy" />
+          <span class="campus-img-label">MIT</span>
+        </div>
+        <div class="campus-img-wrap">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/8b/Doe_Library%2C_UC_Berkeley.jpg/640px-Doe_Library%2C_UC_Berkeley.jpg" alt="UC Berkeley" loading="lazy" />
+          <span class="campus-img-label">UC Berkeley</span>
+        </div>
+        <div class="campus-img-wrap">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/f7/Vanderbilt_University_-_Kirkland_Hall.jpg/640px-Vanderbilt_University_-_Kirkland_Hall.jpg" alt="Vanderbilt" loading="lazy" />
+          <span class="campus-img-label">Vanderbilt</span>
+        </div>
+        <div class="campus-img-wrap">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Southwest_corner_of_Columbia_University.jpg/640px-Southwest_corner_of_Columbia_University.jpg" alt="Columbia University" loading="lazy" />
+          <span class="campus-img-label">Columbia</span>
+        </div>
+        <div class="campus-img-wrap">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Yale_University_-_Harkness_Tower.jpg/640px-Yale_University_-_Harkness_Tower.jpg" alt="Yale University" loading="lazy" />
+          <span class="campus-img-label">Yale</span>
+        </div>
+        <!-- Duplicates for seamless loop -->
+        <div class="campus-img-wrap" aria-hidden="true">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b6/Sunset_at_the_Memorial_Church%2C_Stanford_University.jpg/640px-Sunset_at_the_Memorial_Church%2C_Stanford_University.jpg" alt="" loading="lazy" />
+          <span class="campus-img-label">Stanford</span>
+        </div>
+        <div class="campus-img-wrap" aria-hidden="true">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/MIT_Dome_night1_Edit.jpg/640px-MIT_Dome_night1_Edit.jpg" alt="" loading="lazy" />
+          <span class="campus-img-label">MIT</span>
+        </div>
+        <div class="campus-img-wrap" aria-hidden="true">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/8b/Doe_Library%2C_UC_Berkeley.jpg/640px-Doe_Library%2C_UC_Berkeley.jpg" alt="" loading="lazy" />
+          <span class="campus-img-label">UC Berkeley</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="landing-scroll-hint">Powered by U.S. Department of Education College Scorecard data</div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════
+       SURVEY
+  ══════════════════════════════════════════════ -->
+  <section id="screen-survey" class="screen">
+    <nav class="nav-bar survey-nav">
+      <div class="logo">CollegeMatch</div>
+      <button class="btn-ghost" onclick="restart()">Start over</button>
+    </nav>
+    <div class="survey-wrap">
+
+      <!-- Enhanced progress indicator -->
+      <div class="progress-container">
+        <div class="progress-meta">
+          <span class="step-label" id="step-label">Question 1 of 11</span>
+          <span class="progress-pct" id="progress-pct">0% Complete</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" id="progress-fill"></div>
+        </div>
+        <div class="progress-dots" id="progress-dots"></div>
+      </div>
+
+      <h2 class="q-text" id="q-text"></h2>
+      <div class="options-grid" id="options-grid"></div>
+      <div class="survey-footer">
+        <button class="btn-ghost" id="btn-back" onclick="goBack()">← Back</button>
+        <button class="btn-primary" id="btn-next" onclick="goNext()" disabled>
+          <span id="next-label">Continue</span>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════
+       LOADING
+  ══════════════════════════════════════════════ -->
+  <section id="screen-loading" class="screen">
+    <nav class="nav-bar">
+      <div class="logo">CollegeMatch</div>
+    </nav>
+    <div class="loading-wrap">
+      <div class="loading-spinner">
+        <div class="spinner-ring"></div>
+        <div class="spinner-ring r2"></div>
+      </div>
+      <h2 class="loading-title" id="loading-title">Analyzing your academic profile...</h2>
+      <p class="loading-sub">Fetching real college data from the U.S. Department of Education</p>
+      <div class="loading-steps">
+        <div class="load-step" id="lstep-0"><div class="load-step-dot"></div><span>Fetching College Scorecard data</span></div>
+        <div class="load-step" id="lstep-1"><div class="load-step-dot"></div><span>Filtering by region &amp; budget</span></div>
+        <div class="load-step" id="lstep-2"><div class="load-step-dot"></div><span>Comparing GPA to admissions data</span></div>
+        <div class="load-step" id="lstep-3"><div class="load-step-dot"></div><span>Scoring preference compatibility</span></div>
+        <div class="load-step" id="lstep-4"><div class="load-step-dot"></div><span>Generating AI explanations</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════
+       RESULTS
+  ══════════════════════════════════════════════ -->
+  <section id="screen-results" class="screen">
+    <nav class="nav-bar">
+      <div class="logo">CollegeMatch</div>
+      <div class="nav-actions">
+        <button class="btn-compare-bar" id="btn-compare-bar" onclick="openCompareModal()" style="display:none">
+          Compare (<span id="compare-count">0</span>)
+        </button>
+        <button class="btn-ghost" onclick="restart()">← Retake survey</button>
+      </div>
+    </nav>
+    <div class="results-wrap">
+      <div class="results-header">
+        <div class="results-eyebrow">Your personalized results</div>
+        <h2 class="results-title" id="results-title">Your top college matches</h2>
+        <p class="results-sub" id="results-sub">Based on your academic profile, preferences, and real admissions data.</p>
+      </div>
+
+      <div class="results-grid" id="results-grid"></div>
+
+      <div class="feedback-section">
+        <div class="feedback-card">
+          <h3>How useful were these results?</h3>
+          <p>Your feedback helps improve match accuracy for everyone.</p>
+          <div class="star-row" id="star-row"></div>
+          <div class="feedback-thanks" id="feedback-thanks" style="display:none;">Thanks for your feedback!</div>
+        </div>
+      </div>
+
+      <div class="results-footer">
+        <button class="btn-primary" onclick="restart()">Retake with different answers</button>
+        <p class="disclaimer">Results are powered by U.S. Department of Education College Scorecard data. Always research schools directly and speak with a counselor before making decisions.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════
+       COMPARE MODAL
+  ══════════════════════════════════════════════ -->
+  <div id="compare-modal" class="compare-modal" style="display:none" onclick="handleModalBackdrop(event)">
+    <div class="compare-modal-inner">
+      <div class="compare-modal-header">
+        <h3 class="compare-modal-title">Side-by-Side Comparison</h3>
+        <button class="compare-close-btn" onclick="closeCompareModal()">✕</button>
+      </div>
+      <div class="compare-modal-body" id="compare-modal-body"></div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
