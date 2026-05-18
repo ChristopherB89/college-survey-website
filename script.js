@@ -50,7 +50,7 @@ const QUESTIONS = [
    CollegeMatch — script.js
    ========================================================================== */
 
-const COLLEGE_SCORECARD_API_KEY = 'YOUR_API_KEY_HERE';
+const COLLEGE_SCORECARD_API_KEY = 'qMACfvWIWAzQ6KZGdhgl9ZUvnelKr8YbUND0HXP0';
 
 const API_BASE =
   'https://api.data.gov/ed/collegescorecard/v1/schools';
