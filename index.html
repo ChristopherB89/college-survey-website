@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Prevents browser from sending Referer header with image requests,
+       which allows Unsplash images to load from any device or origin -->
+  <meta name="referrer" content="no-referrer" />
   <title>CollegeMatch — Find Your Best-Fit School</title>
   <link rel="stylesheet" href="style.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -53,52 +56,52 @@
     <div class="campus-strip">
       <div class="campus-strip-inner" id="campus-strip-inner">
         <div class="campus-img-wrap">
-          <img src="https://images.unsplash.com/photo-1629337943021-a9b7e89289c8?w=480&q=80&fit=crop" alt="Stanford University" loading="lazy" crossorigin="anonymous" />
+          <img src="https://images.unsplash.com/photo-1629337943021-a9b7e89289c8?w=480&q=80&fit=crop" alt="Stanford University" loading="lazy" referrerpolicy="no-referrer" />
           <span class="campus-img-label">Stanford</span>
         </div>
         <div class="campus-img-wrap">
-          <img src="https://images.unsplash.com/photo-1541829070764-84a7d30dd3f3?w=480&q=80&fit=crop" alt="MIT" loading="lazy" crossorigin="anonymous" />
+          <img src="https://images.unsplash.com/photo-1541829070764-84a7d30dd3f3?w=480&q=80&fit=crop" alt="MIT" loading="lazy" referrerpolicy="no-referrer" />
           <span class="campus-img-label">MIT</span>
         </div>
         <div class="campus-img-wrap">
-          <img src="https://images.unsplash.com/photo-1583373834259-46cc92173cb7?w=480&q=80&fit=crop" alt="UC Berkeley" loading="lazy" crossorigin="anonymous" />
+          <img src="https://images.unsplash.com/photo-1583373834259-46cc92173cb7?w=480&q=80&fit=crop" alt="UC Berkeley" loading="lazy" referrerpolicy="no-referrer" />
           <span class="campus-img-label">UC Berkeley</span>
         </div>
         <div class="campus-img-wrap">
-          <img src="https://images.unsplash.com/photo-1562774053-701939374585?w=480&q=80&fit=crop" alt="Vanderbilt" loading="lazy" crossorigin="anonymous" />
+          <img src="https://images.unsplash.com/photo-1562774053-701939374585?w=480&q=80&fit=crop" alt="Vanderbilt" loading="lazy" referrerpolicy="no-referrer" />
           <span class="campus-img-label">Vanderbilt</span>
         </div>
         <div class="campus-img-wrap">
-          <img src="https://images.unsplash.com/photo-1499092346589-b9b6be3e94b2?w=480&q=80&fit=crop" alt="NYU" loading="lazy" crossorigin="anonymous" />
+          <img src="https://images.unsplash.com/photo-1499092346589-b9b6be3e94b2?w=480&q=80&fit=crop" alt="NYU" loading="lazy" referrerpolicy="no-referrer" />
           <span class="campus-img-label">NYU</span>
         </div>
         <div class="campus-img-wrap">
-          <img src="https://images.unsplash.com/photo-1607237138185-eedd9c632b0b?w=480&q=80&fit=crop" alt="Yale University" loading="lazy" crossorigin="anonymous" />
+          <img src="https://images.unsplash.com/photo-1607237138185-eedd9c632b0b?w=480&q=80&fit=crop" alt="Yale University" loading="lazy" referrerpolicy="no-referrer" />
           <span class="campus-img-label">Yale</span>
         </div>
         <div class="campus-img-wrap">
-          <img src="https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=480&q=80&fit=crop" alt="University of Chicago" loading="lazy" crossorigin="anonymous" />
+          <img src="https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=480&q=80&fit=crop" alt="University of Chicago" loading="lazy" referrerpolicy="no-referrer" />
           <span class="campus-img-label">U Chicago</span>
         </div>
         <div class="campus-img-wrap">
-          <img src="https://images.unsplash.com/photo-1576502200916-3808e07386a5?w=480&q=80&fit=crop" alt="Princeton University" loading="lazy" crossorigin="anonymous" />
+          <img src="https://images.unsplash.com/photo-1576502200916-3808e07386a5?w=480&q=80&fit=crop" alt="Princeton University" loading="lazy" referrerpolicy="no-referrer" />
           <span class="campus-img-label">Princeton</span>
         </div>
         <!-- Duplicates for seamless scroll loop -->
         <div class="campus-img-wrap" aria-hidden="true">
-          <img src="https://images.unsplash.com/photo-1629337943021-a9b7e89289c8?w=480&q=80&fit=crop" alt="" loading="lazy" crossorigin="anonymous" />
+          <img src="https://images.unsplash.com/photo-1629337943021-a9b7e89289c8?w=480&q=80&fit=crop" alt="" loading="lazy" referrerpolicy="no-referrer" />
           <span class="campus-img-label">Stanford</span>
         </div>
         <div class="campus-img-wrap" aria-hidden="true">
-          <img src="https://images.unsplash.com/photo-1541829070764-84a7d30dd3f3?w=480&q=80&fit=crop" alt="" loading="lazy" crossorigin="anonymous" />
+          <img src="https://images.unsplash.com/photo-1541829070764-84a7d30dd3f3?w=480&q=80&fit=crop" alt="" loading="lazy" referrerpolicy="no-referrer" />
           <span class="campus-img-label">MIT</span>
         </div>
         <div class="campus-img-wrap" aria-hidden="true">
-          <img src="https://images.unsplash.com/photo-1583373834259-46cc92173cb7?w=480&q=80&fit=crop" alt="" loading="lazy" crossorigin="anonymous" />
+          <img src="https://images.unsplash.com/photo-1583373834259-46cc92173cb7?w=480&q=80&fit=crop" alt="" loading="lazy" referrerpolicy="no-referrer" />
           <span class="campus-img-label">UC Berkeley</span>
         </div>
         <div class="campus-img-wrap" aria-hidden="true">
-          <img src="https://images.unsplash.com/photo-1562774053-701939374585?w=480&q=80&fit=crop" alt="" loading="lazy" crossorigin="anonymous" />
+          <img src="https://images.unsplash.com/photo-1562774053-701939374585?w=480&q=80&fit=crop" alt="" loading="lazy" referrerpolicy="no-referrer" />
           <span class="campus-img-label">Vanderbilt</span>
         </div>
       </div>

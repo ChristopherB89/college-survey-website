@@ -1039,7 +1039,7 @@ function renderCards(scored, grid, withAI) {
                 src="${imgUrl}"
                 alt="${school.name} campus"
                 loading="lazy"
-                crossorigin="anonymous"
+                referrerpolicy="no-referrer"
                 onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
               /><div class="card-image-placeholder" style="display:none;background:${getPlaceholderGradient(school.name)}">🏛️</div>`
             : `<div class="card-image-placeholder" style="background:${getPlaceholderGradient(school.name)}">🏛️</div>`}
@@ -1180,7 +1180,7 @@ function renderCompareModal(schools) {
         ${schools.map(s => {
           const imgUrl = getCampusImage(s.name);
           return `<th>
-            ${imgUrl ? `<img class="compare-school-img" src="${imgUrl}" alt="${s.name}" crossorigin="anonymous" onerror="this.style.display='none'" />` : ''}
+            ${imgUrl ? `<img class="compare-school-img" src="${imgUrl}" alt="${s.name}" referrerpolicy="no-referrer" onerror="this.style.display='none'" />` : ''}
             <div class="compare-school-name">${s.name}</div>
             <div class="compare-school-loc">${s.location}</div>
           </th>`;
