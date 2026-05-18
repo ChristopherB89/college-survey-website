@@ -17,7 +17,7 @@
    Get your Anthropic API key at:
    https://console.anthropic.com/
    ─────────────────────────────────────────────────────────────────── */
-const SCORECARD_API_KEY = 'YOUR_COLLEGE_SCORECARD_API_KEY_HERE';
+const SCORECARD_API_KEY = 'qMACfvWIWAzQ6KZGdhgl9ZUvnelKr8YbUND0HXP0';
 const ANTHROPIC_API_KEY = 'YOUR_ANTHROPIC_API_KEY_HERE';
 
 const SCORECARD_BASE = 'https://api.data.gov/ed/collegescorecard/v1/schools';
