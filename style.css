@@ -1021,6 +1021,48 @@ body {
 .college-card:nth-child(4) { animation-delay: 0.29s; }
 .college-card:nth-child(5) { animation-delay: 0.37s; }
 
+/* ── Vote interactions ───────────────────────────────────────────── */
+
+/* "Not for me" — slide right and fade out, then collapse height */
+@keyframes cardRemove {
+  0%   { opacity: 1; transform: translateX(0);    max-height: 600px; margin-bottom: 20px; }
+  40%  { opacity: 0; transform: translateX(60px); max-height: 600px; margin-bottom: 20px; }
+  100% { opacity: 0; transform: translateX(60px); max-height: 0;     margin-bottom: 0;   padding: 0; }
+}
+.card-removing {
+  animation: cardRemove 0.45s ease forwards;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* "Good match" — pulse gold then slide up and out */
+@keyframes cardPromote {
+  0%   { transform: translateY(0)   scale(1);    box-shadow: var(--shadow-sm); }
+  25%  { transform: translateY(0)   scale(1.01); box-shadow: 0 0 0 3px rgba(196,147,58,0.35), var(--shadow-md); }
+  60%  { transform: translateY(-8px) scale(1.01); box-shadow: var(--shadow-md); opacity: 1; }
+  100% { transform: translateY(-40px) scale(1);  opacity: 0; }
+}
+.card-promoting {
+  animation: cardPromote 0.42s ease forwards;
+  pointer-events: none;
+  z-index: 5;
+  position: relative;
+}
+
+/* Drop in from above after being moved to top of list */
+@keyframes cardDropIn {
+  0%   { opacity: 0; transform: translateY(-20px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.card-drop-in {
+  animation: cardDropIn 0.35s ease forwards;
+}
+
+/* Promoted cards get a persistent gold left border accent */
+.card-promoted {
+  border-left: 3px solid var(--gold) !important;
+}
+
 /* ─── Responsive ────────────────────────────────────────────────── */
 @media (max-width: 700px) {
   .nav-bar { padding: 1rem 1.25rem; }

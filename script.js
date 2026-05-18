@@ -1074,13 +1074,76 @@ function buildFallbackExplanation(school, pct, matchCategory) {
 }
 
 /* ─── Feedback Interactions ──────────────────────────────────────── */
+
+// Tracks the order in which cards were upvoted, so promoted cards
+// stack at the top in chronological click order (first clicked = highest).
+const upvoteOrder = [];
+
 function vote(idx, dir) {
-  const up = document.getElementById('up-' + idx);
-  const dn = document.getElementById('dn-' + idx);
-  up.classList.remove('voted-up', 'voted-dn');
-  dn.classList.remove('voted-up', 'voted-dn');
-  if (dir === 'up') up.classList.add('voted-up');
-  else dn.classList.add('voted-dn');
+  const grid = document.getElementById('results-grid');
+  const card = grid.querySelector(`.college-card[data-id="${resultsData[idx]?.id || idx}"]`);
+  if (!card) return;
+
+  // Prevent voting on the same card twice
+  if (card.dataset.voted) return;
+  card.dataset.voted = dir;
+
+  if (dir === 'down') {
+    // ── "Not for me" — animate out then remove from DOM ────────────
+    card.classList.add('card-removing');
+    card.addEventListener('animationend', () => {
+      card.remove();
+      // Also remove from compareSet if it was selected
+      const schoolId = resultsData[idx]?.id || idx;
+      if (compareSet.has(schoolId)) {
+        compareSet.delete(schoolId);
+        const count = compareSet.size;
+        document.getElementById('compare-count').textContent = count;
+        document.getElementById('btn-compare-bar').style.display = count >= 2 ? 'inline-flex' : 'none';
+      }
+    }, { once: true });
+
+  } else {
+    // ── "Good match" — animate out of position, move to top ────────
+    // Record this card's idx in upvote order (first clicked = index 0)
+    upvoteOrder.push(idx);
+
+    card.classList.add('card-promoting');
+    card.addEventListener('animationend', () => {
+      card.classList.remove('card-promoting');
+      card.classList.add('card-promoted');
+
+      // Insert at the correct position among already-promoted cards.
+      // upvoteOrder.length - 1 is this card's rank (0 = first promoted).
+      const rank = upvoteOrder.indexOf(idx); // position in upvote history
+      const promotedCards = grid.querySelectorAll('.card-promoted');
+
+      if (rank === 0 || promotedCards.length <= 1) {
+        // First promoted card — goes to the very top
+        grid.insertBefore(card, grid.firstChild);
+      } else {
+        // Insert after the (rank-1)th promoted card
+        const sibling = promotedCards[rank - 1];
+        if (sibling && sibling !== card) {
+          sibling.after(card);
+        } else {
+          grid.insertBefore(card, grid.firstChild);
+        }
+      }
+
+      // Trigger the drop-in animation after repositioning
+      requestAnimationFrame(() => {
+        card.classList.add('card-drop-in');
+        card.addEventListener('animationend', () => {
+          card.classList.remove('card-drop-in');
+        }, { once: true });
+      });
+
+      // Mark the upvote button as active (locked in)
+      const up = document.getElementById('up-' + idx);
+      if (up) up.classList.add('voted-up');
+    }, { once: true });
+  }
 }
 
 function buildStarRating() {
@@ -1226,6 +1289,7 @@ function restart() {
   Object.keys(answers).forEach(k => delete answers[k]);
   resultsData = [];
   compareSet.clear();
+  upvoteOrder.length = 0;
   apiCache = {};
   document.getElementById('btn-compare-bar').style.display = 'none';
   closeCompareModal();
