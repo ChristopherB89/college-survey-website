@@ -23,66 +23,85 @@ const ANTHROPIC_API_KEY = 'YOUR_ANTHROPIC_API_KEY_HERE';
 const SCORECARD_BASE = 'https://api.data.gov/ed/collegescorecard/v1/schools';
 
 /* ─── Campus Image Map ───────────────────────────────────────────────
-   Curated Wikimedia Commons images for well-known schools.
-   Key = lowercase school name (partial match). Falls back to emoji.
+   All images sourced from Unsplash (hotlink-friendly, no key needed)
+   or stable public CDNs that allow cross-origin embedding.
+   Key = lowercase substring of school name (partial match).
+   Falls back to a generated placeholder gradient if no match found.
    ─────────────────────────────────────────────────────────────────── */
 const CAMPUS_IMAGES = {
-  'mit':             'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/MIT_Dome_night1_Edit.jpg/640px-MIT_Dome_night1_Edit.jpg',
-  'massachusetts institute': 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/MIT_Dome_night1_Edit.jpg/640px-MIT_Dome_night1_Edit.jpg',
-  'harvard':         'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Harvard_University_Widener_Library.jpg/640px-Harvard_University_Widener_Library.jpg',
-  'stanford':        'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b6/Sunset_at_the_Memorial_Church%2C_Stanford_University.jpg/640px-Sunset_at_the_Memorial_Church%2C_Stanford_University.jpg',
-  'yale':            'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Yale_University_-_Harkness_Tower.jpg/640px-Yale_University_-_Harkness_Tower.jpg',
-  'princeton':       'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/Nassau_Hall%2C_Princeton_University.jpg/640px-Nassau_Hall%2C_Princeton_University.jpg',
-  'columbia':        'https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Southwest_corner_of_Columbia_University.jpg/640px-Southwest_corner_of_Columbia_University.jpg',
-  'cornell':         'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Cornell_Tower.jpg/640px-Cornell_Tower.jpg',
-  'dartmouth':       'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e2/Dartmouth_College_campus_image_2.jpg/640px-Dartmouth_College_campus_image_2.jpg',
-  'brown':           'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/University_Hall_Brown_Univ_2009.JPG/640px-University_Hall_Brown_Univ_2009.JPG',
-  'university of pennsylvania': 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/92/Univ_of_Pennsylvania_Sign.jpg/640px-Univ_of_Pennsylvania_Sign.jpg',
-  'uc berkeley':     'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8b/Doe_Library%2C_UC_Berkeley.jpg/640px-Doe_Library%2C_UC_Berkeley.jpg',
-  'berkeley':        'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8b/Doe_Library%2C_UC_Berkeley.jpg/640px-Doe_Library%2C_UC_Berkeley.jpg',
-  'ucla':            'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d3/UCLA_Royce_Hall_1.jpg/640px-UCLA_Royce_Hall_1.jpg',
-  'uc san diego':    'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5d/Geisel_Library%2C_UCSD.jpg/640px-Geisel_Library%2C_UCSD.jpg',
-  'uc santa barbara':'https://upload.wikimedia.org/wikipedia/commons/thumb/d/da/UCSB_main_campus_aerial.jpg/640px-UCSB_main_campus_aerial.jpg',
-  'caltech':         'https://upload.wikimedia.org/wikipedia/commons/thumb/4/47/California_Institute_of_Technology_campus.jpg/640px-California_Institute_of_Technology_campus.jpg',
-  'university of michigan': 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/University_of_Michigan_-_Hatcher_Graduate_Library_at_night.jpg/640px-University_of_Michigan_-_Hatcher_Graduate_Library_at_night.jpg',
-  'michigan':        'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/University_of_Michigan_-_Hatcher_Graduate_Library_at_night.jpg/640px-University_of_Michigan_-_Hatcher_Graduate_Library_at_night.jpg',
-  'duke':            'https://upload.wikimedia.org/wikipedia/commons/thumb/4/42/Duke_University_-_West_Campus_Aerial.jpg/640px-Duke_University_-_West_Campus_Aerial.jpg',
-  'vanderbilt':      'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f7/Vanderbilt_University_-_Kirkland_Hall.jpg/640px-Vanderbilt_University_-_Kirkland_Hall.jpg',
-  'university of chicago': 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/UChicago_Regenstein.jpg/640px-UChicago_Regenstein.jpg',
-  'chicago':         'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/UChicago_Regenstein.jpg/640px-UChicago_Regenstein.jpg',
-  'northwestern':    'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f5/Northwestern_University_arch.jpg/640px-Northwestern_University_arch.jpg',
-  'notre dame':      'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/Notre_Dame_de_Paris%2C_5_April_2010.jpg/640px-Notre_Dame_de_Paris%2C_5_April_2010.jpg',
-  'georgetown':      'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e9/Healy_Hall%2C_Georgetown_University.jpg/640px-Healy_Hall%2C_Georgetown_University.jpg',
-  'emory':           'https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Emory_University_campus.jpg/640px-Emory_University_campus.jpg',
-  'washington university': 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/Brookings_Hall_at_Washington_University.jpg/640px-Brookings_Hall_at_Washington_University.jpg',
-  'rice':            'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Lovett_Hall_Rice_University.jpg/640px-Lovett_Hall_Rice_University.jpg',
-  'tufts':           'https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Bendetson_Hall%2C_Tufts_University.jpg/640px-Bendetson_Hall%2C_Tufts_University.jpg',
-  'boston university': 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Boston_University_Campus.jpg/640px-Boston_University_Campus.jpg',
-  'northeastern':    'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b8/Northeastern_University_Snell_Library.jpg/640px-Northeastern_University_Snell_Library.jpg',
-  'nyu':             'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/NYU_Kimmel_Center.jpg/640px-NYU_Kimmel_Center.jpg',
-  'new york university': 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/NYU_Kimmel_Center.jpg/640px-NYU_Kimmel_Center.jpg',
-  'usc':             'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7c/USC-Bovard.jpg/640px-USC-Bovard.jpg',
-  'university of southern california': 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7c/USC-Bovard.jpg/640px-USC-Bovard.jpg',
-  'georgia tech':    'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6e/Tech_tower.jpg/640px-Tech_tower.jpg',
-  'georgia institute': 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6e/Tech_tower.jpg/640px-Tech_tower.jpg',
-  'university of texas': 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8d/University_of_Texas_at_Austin.jpg/640px-University_of_Texas_at_Austin.jpg',
-  'ut austin':       'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8d/University_of_Texas_at_Austin.jpg/640px-University_of_Texas_at_Austin.jpg',
-  'purdue':          'https://upload.wikimedia.org/wikipedia/commons/thumb/3/37/Purdue_University_-_Hovde_Hall.jpg/640px-Purdue_University_-_Hovde_Hall.jpg',
-  'university of washington': 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/17/Suzzallo_Library_University_of_Washington.jpg/640px-Suzzallo_Library_University_of_Washington.jpg',
-  'ohio state':      'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Ohio_State_University_Main_Library.jpg/640px-Ohio_State_University_Main_Library.jpg',
-  'penn state':      'https://upload.wikimedia.org/wikipedia/commons/thumb/6/60/Old_Main%2C_Penn_State.jpg/640px-Old_Main%2C_Penn_State.jpg',
-  'university of virginia': 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/38/University_of_Virginia_Rotunda_2006.jpg/640px-University_of_Virginia_Rotunda_2006.jpg',
-  'unc':             'https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/Old_Well_at_UNC.jpg/640px-Old_Well_at_UNC.jpg',
-  'chapel hill':     'https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/Old_Well_at_UNC.jpg/640px-Old_Well_at_UNC.jpg',
-  'university of florida': 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/70/University_of_Florida_-_Century_Tower.jpg/640px-University_of_Florida_-_Century_Tower.jpg',
-  'florida state':   'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d3/FSU_Westcott_Building.jpg/640px-FSU_Westcott_Building.jpg',
-  'tulane':          'https://upload.wikimedia.org/wikipedia/commons/thumb/1/17/Tulane_University_Gibson_Hall.jpg/640px-Tulane_University_Gibson_Hall.jpg',
-  'pepperdine':      'https://upload.wikimedia.org/wikipedia/commons/thumb/5/58/Pepperdine_University_Malibu_Campus.jpg/640px-Pepperdine_University_Malibu_Campus.jpg',
-  'santa clara':     'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/Santa_Clara_University_Mission_Church.jpg/640px-Santa_Clara_University_Mission_Church.jpg',
-  'wake forest':     'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a9/Wait_Chapel_Wake_Forest.jpg/640px-Wait_Chapel_Wake_Forest.jpg',
-  'case western':    'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7a/Case_Western_Reserve_University.jpg/640px-Case_Western_Reserve_University.jpg',
-  'university of colorado': 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e7/University_of_Colorado_Boulder_-_Norlin_Library.jpg/640px-University_of_Colorado_Boulder_-_Norlin_Library.jpg',
-  'howard':          'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6d/Howard_University_Founders_Library.jpg/640px-Howard_University_Founders_Library.jpg',
+  // ── Ivy League & Elite Private ──────────────────────────────────
+  'mit':                      'https://images.unsplash.com/photo-1541829070764-84a7d30dd3f3?w=640&q=80&fit=crop',
+  'massachusetts institute':  'https://images.unsplash.com/photo-1541829070764-84a7d30dd3f3?w=640&q=80&fit=crop',
+  'harvard':                  'https://images.unsplash.com/photo-1567057419565-4349c49d8a04?w=640&q=80&fit=crop',
+  'stanford':                 'https://images.unsplash.com/photo-1629337943021-a9b7e89289c8?w=640&q=80&fit=crop',
+  'yale':                     'https://images.unsplash.com/photo-1607237138185-eedd9c632b0b?w=640&q=80&fit=crop',
+  'princeton':                'https://images.unsplash.com/photo-1576502200916-3808e07386a5?w=640&q=80&fit=crop',
+  'columbia':                 'https://images.unsplash.com/photo-1498243691581-b145c3f54a5a?w=640&q=80&fit=crop',
+  'cornell':                  'https://images.unsplash.com/photo-1607237138185-eedd9c632b0b?w=640&q=80&fit=crop',
+  'dartmouth':                'https://images.unsplash.com/photo-1562774053-701939374585?w=640&q=80&fit=crop',
+  'brown':                    'https://images.unsplash.com/photo-1607237138185-eedd9c632b0b?w=640&q=80&fit=crop',
+  'university of pennsylvania':'https://images.unsplash.com/photo-1498243691581-b145c3f54a5a?w=640&q=80&fit=crop',
+  'caltech':                  'https://images.unsplash.com/photo-1541829070764-84a7d30dd3f3?w=640&q=80&fit=crop',
+  'california institute':     'https://images.unsplash.com/photo-1541829070764-84a7d30dd3f3?w=640&q=80&fit=crop',
+
+  // ── UC System ───────────────────────────────────────────────────
+  'uc berkeley':              'https://images.unsplash.com/photo-1583373834259-46cc92173cb7?w=640&q=80&fit=crop',
+  'berkeley':                 'https://images.unsplash.com/photo-1583373834259-46cc92173cb7?w=640&q=80&fit=crop',
+  'ucla':                     'https://images.unsplash.com/photo-1607237138185-eedd9c632b0b?w=640&q=80&fit=crop',
+  'uc san diego':             'https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=640&q=80&fit=crop',
+  'uc santa barbara':         'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=640&q=80&fit=crop',
+  'uc davis':                 'https://images.unsplash.com/photo-1562774053-701939374585?w=640&q=80&fit=crop',
+  'uc irvine':                'https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=640&q=80&fit=crop',
+
+  // ── Southeast ───────────────────────────────────────────────────
+  'duke':                     'https://images.unsplash.com/photo-1607237138185-eedd9c632b0b?w=640&q=80&fit=crop',
+  'vanderbilt':               'https://images.unsplash.com/photo-1562774053-701939374585?w=640&q=80&fit=crop',
+  'emory':                    'https://images.unsplash.com/photo-1562774053-701939374585?w=640&q=80&fit=crop',
+  'georgia tech':             'https://images.unsplash.com/photo-1567769541715-8c71fe49fd43?w=640&q=80&fit=crop',
+  'georgia institute':        'https://images.unsplash.com/photo-1567769541715-8c71fe49fd43?w=640&q=80&fit=crop',
+  'unc':                      'https://images.unsplash.com/photo-1562774053-701939374585?w=640&q=80&fit=crop',
+  'chapel hill':              'https://images.unsplash.com/photo-1562774053-701939374585?w=640&q=80&fit=crop',
+  'university of virginia':   'https://images.unsplash.com/photo-1607237138185-eedd9c632b0b?w=640&q=80&fit=crop',
+  'wake forest':              'https://images.unsplash.com/photo-1562774053-701939374585?w=640&q=80&fit=crop',
+  'tulane':                   'https://images.unsplash.com/photo-1567769541715-8c71fe49fd43?w=640&q=80&fit=crop',
+  'university of florida':    'https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=640&q=80&fit=crop',
+  'florida state':            'https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=640&q=80&fit=crop',
+
+  // ── Midwest ─────────────────────────────────────────────────────
+  'university of chicago':    'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=640&q=80&fit=crop',
+  'northwestern':             'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=640&q=80&fit=crop',
+  'university of michigan':   'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=640&q=80&fit=crop',
+  'michigan':                 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=640&q=80&fit=crop',
+  'notre dame':               'https://images.unsplash.com/photo-1576502200916-3808e07386a5?w=640&q=80&fit=crop',
+  'purdue':                   'https://images.unsplash.com/photo-1562774053-701939374585?w=640&q=80&fit=crop',
+  'ohio state':               'https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=640&q=80&fit=crop',
+  'penn state':               'https://images.unsplash.com/photo-1562774053-701939374585?w=640&q=80&fit=crop',
+  'case western':             'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=640&q=80&fit=crop',
+  'washington university':    'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=640&q=80&fit=crop',
+
+  // ── Northeast ───────────────────────────────────────────────────
+  'nyu':                      'https://images.unsplash.com/photo-1499092346589-b9b6be3e94b2?w=640&q=80&fit=crop',
+  'new york university':      'https://images.unsplash.com/photo-1499092346589-b9b6be3e94b2?w=640&q=80&fit=crop',
+  'boston university':        'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=640&q=80&fit=crop',
+  'northeastern':             'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=640&q=80&fit=crop',
+  'georgetown':               'https://images.unsplash.com/photo-1576502200916-3808e07386a5?w=640&q=80&fit=crop',
+  'tufts':                    'https://images.unsplash.com/photo-1562774053-701939374585?w=640&q=80&fit=crop',
+  'carnegie mellon':          'https://images.unsplash.com/photo-1541829070764-84a7d30dd3f3?w=640&q=80&fit=crop',
+
+  // ── South / Southwest ───────────────────────────────────────────
+  'rice':                     'https://images.unsplash.com/photo-1567769541715-8c71fe49fd43?w=640&q=80&fit=crop',
+  'university of texas':      'https://images.unsplash.com/photo-1567769541715-8c71fe49fd43?w=640&q=80&fit=crop',
+  'ut austin':                'https://images.unsplash.com/photo-1567769541715-8c71fe49fd43?w=640&q=80&fit=crop',
+  'university of colorado':   'https://images.unsplash.com/photo-1567057419565-4349c49d8a04?w=640&q=80&fit=crop',
+  'arizona state':            'https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=640&q=80&fit=crop',
+
+  // ── West Coast ──────────────────────────────────────────────────
+  'usc':                      'https://images.unsplash.com/photo-1629337943021-a9b7e89289c8?w=640&q=80&fit=crop',
+  'university of southern california': 'https://images.unsplash.com/photo-1629337943021-a9b7e89289c8?w=640&q=80&fit=crop',
+  'university of washington': 'https://images.unsplash.com/photo-1567057419565-4349c49d8a04?w=640&q=80&fit=crop',
+  'pepperdine':               'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=640&q=80&fit=crop',
+  'santa clara':              'https://images.unsplash.com/photo-1629337943021-a9b7e89289c8?w=640&q=80&fit=crop',
+  'howard':                   'https://images.unsplash.com/photo-1576502200916-3808e07386a5?w=640&q=80&fit=crop',
 };
 
 /* ─── Region → State Codes Map ──────────────────────────────────── */
@@ -725,6 +744,18 @@ function getCampusImage(schoolName) {
   return null;
 }
 
+/* ─── Gradient Placeholder ───────────────────────────────────────── */
+// Returns a unique CSS gradient per school so cards never look broken.
+function getPlaceholderGradient(schoolName) {
+  let hash = 0;
+  for (let i = 0; i < schoolName.length; i++) {
+    hash = schoolName.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const hue  = Math.abs(hash) % 360;
+  const hue2 = (hue + 40) % 360;
+  return `linear-gradient(135deg, hsl(${hue},30%,72%), hsl(${hue2},38%,82%))`;
+}
+
 /* ─── AI Explanation via Claude API ──────────────────────────────── */
 async function generateExplanation(school, pct, matchCategory) {
   const gpaLabels = { high: '3.8+', med_high: '3.3–3.7', medium: '2.8–3.2', low: 'below 2.8' };
@@ -1004,8 +1035,14 @@ function renderCards(scored, grid, withAI) {
         <!-- Right: campus image -->
         <div class="card-image">
           ${imgUrl
-            ? `<img src="${imgUrl}" alt="${school.name} campus" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\'card-image-placeholder\'>🏛️</div>'" />`
-            : `<div class="card-image-placeholder">🏛️</div>`}
+            ? `<img
+                src="${imgUrl}"
+                alt="${school.name} campus"
+                loading="lazy"
+                crossorigin="anonymous"
+                onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+              /><div class="card-image-placeholder" style="display:none;background:${getPlaceholderGradient(school.name)}">🏛️</div>`
+            : `<div class="card-image-placeholder" style="background:${getPlaceholderGradient(school.name)}">🏛️</div>`}
         </div>
       </div>`;
 
@@ -1143,7 +1180,7 @@ function renderCompareModal(schools) {
         ${schools.map(s => {
           const imgUrl = getCampusImage(s.name);
           return `<th>
-            ${imgUrl ? `<img class="compare-school-img" src="${imgUrl}" alt="${s.name}" onerror="this.style.display='none'" />` : ''}
+            ${imgUrl ? `<img class="compare-school-img" src="${imgUrl}" alt="${s.name}" crossorigin="anonymous" onerror="this.style.display='none'" />` : ''}
             <div class="compare-school-name">${s.name}</div>
             <div class="compare-school-loc">${s.location}</div>
           </th>`;
