@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Prevents browser from sending Referer header with image requests,
+       which allows Unsplash images to load from any device or origin -->
+  <meta name="referrer" content="no-referrer" />
   <title>CollegeMatch — Find Your Best-Fit School</title>
   <link rel="stylesheet" href="style.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -11,40 +14,15 @@
 </head>
 <body>
 
-<<<<<<< HEAD
-  <!-- LANDING -->
-=======
   <!-- ══════════════════════════════════════════════
        LANDING
   ══════════════════════════════════════════════ -->
->>>>>>> 981ebb6 (Push)
   <section id="screen-landing" class="screen active">
     <div class="landing-bg">
       <div class="bg-circle c1"></div>
       <div class="bg-circle c2"></div>
       <div class="bg-circle c3"></div>
     </div>
-<<<<<<< HEAD
-    <nav class="nav-bar">
-      <div class="logo">CollegeMatch</div>
-    </nav>
-    <div class="landing-content">
-      <div class="landing-eyebrow">Free · No account needed · 2 minutes</div>
-      <h1 class="landing-title">Find the college<br /><em>built for you.</em></h1>
-      <p class="landing-sub">Answer 6 questions. Get a personalized list of schools matched to your goals, budget, location, and vibe — with clear explanations for every recommendation.</p>
-      <div class="trust-row">
-        <span class="trust-item">
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6.5" stroke="currentColor" stroke-opacity="0.4"/><path d="M4 7l2 2 4-4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          80+ colleges in our database
-        </span>
-        <span class="trust-item">
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6.5" stroke="currentColor" stroke-opacity="0.4"/><path d="M4 7l2 2 4-4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          Personalized match scores
-        </span>
-        <span class="trust-item">
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6.5" stroke="currentColor" stroke-opacity="0.4"/><path d="M4 7l2 2 4-4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          "Why this school" for every result
-=======
 
     <nav class="nav-bar">
       <div class="logo">CollegeMatch</div>
@@ -66,7 +44,6 @@
         <span class="trust-item">
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6.5" stroke="currentColor" stroke-opacity="0.4"/><path d="M4 7l2 2 4-4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           Side-by-side comparison tool
->>>>>>> 981ebb6 (Push)
         </span>
       </div>
       <button class="btn-primary" id="btn-start" onclick="startSurvey()">
@@ -74,52 +51,58 @@
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
     </div>
-<<<<<<< HEAD
-    <div class="landing-scroll-hint">Scroll to see all your results after completing the survey</div>
-  </section>
-
-  <!-- SURVEY -->
-=======
 
     <!-- Real campus photo strip -->
     <div class="campus-strip">
       <div class="campus-strip-inner" id="campus-strip-inner">
         <div class="campus-img-wrap">
-          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b6/Sunset_at_the_Memorial_Church%2C_Stanford_University.jpg/640px-Sunset_at_the_Memorial_Church%2C_Stanford_University.jpg" alt="Stanford University" loading="lazy" />
+          <img src="https://images.unsplash.com/photo-1629337943021-a9b7e89289c8?w=480&q=80&fit=crop" alt="Stanford University" loading="lazy" referrerpolicy="no-referrer" />
           <span class="campus-img-label">Stanford</span>
         </div>
         <div class="campus-img-wrap">
-          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/MIT_Dome_night1_Edit.jpg/640px-MIT_Dome_night1_Edit.jpg" alt="MIT" loading="lazy" />
+          <img src="https://images.unsplash.com/photo-1541829070764-84a7d30dd3f3?w=480&q=80&fit=crop" alt="MIT" loading="lazy" referrerpolicy="no-referrer" />
           <span class="campus-img-label">MIT</span>
         </div>
         <div class="campus-img-wrap">
-          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/8b/Doe_Library%2C_UC_Berkeley.jpg/640px-Doe_Library%2C_UC_Berkeley.jpg" alt="UC Berkeley" loading="lazy" />
+          <img src="https://images.unsplash.com/photo-1583373834259-46cc92173cb7?w=480&q=80&fit=crop" alt="UC Berkeley" loading="lazy" referrerpolicy="no-referrer" />
           <span class="campus-img-label">UC Berkeley</span>
         </div>
         <div class="campus-img-wrap">
-          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/f7/Vanderbilt_University_-_Kirkland_Hall.jpg/640px-Vanderbilt_University_-_Kirkland_Hall.jpg" alt="Vanderbilt" loading="lazy" />
+          <img src="https://images.unsplash.com/photo-1562774053-701939374585?w=480&q=80&fit=crop" alt="Vanderbilt" loading="lazy" referrerpolicy="no-referrer" />
           <span class="campus-img-label">Vanderbilt</span>
         </div>
         <div class="campus-img-wrap">
-          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Southwest_corner_of_Columbia_University.jpg/640px-Southwest_corner_of_Columbia_University.jpg" alt="Columbia University" loading="lazy" />
-          <span class="campus-img-label">Columbia</span>
+          <img src="https://images.unsplash.com/photo-1499092346589-b9b6be3e94b2?w=480&q=80&fit=crop" alt="NYU" loading="lazy" referrerpolicy="no-referrer" />
+          <span class="campus-img-label">NYU</span>
         </div>
         <div class="campus-img-wrap">
-          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Yale_University_-_Harkness_Tower.jpg/640px-Yale_University_-_Harkness_Tower.jpg" alt="Yale University" loading="lazy" />
+          <img src="https://images.unsplash.com/photo-1607237138185-eedd9c632b0b?w=480&q=80&fit=crop" alt="Yale University" loading="lazy" referrerpolicy="no-referrer" />
           <span class="campus-img-label">Yale</span>
         </div>
-        <!-- Duplicates for seamless loop -->
+        <div class="campus-img-wrap">
+          <img src="https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=480&q=80&fit=crop" alt="University of Chicago" loading="lazy" referrerpolicy="no-referrer" />
+          <span class="campus-img-label">U Chicago</span>
+        </div>
+        <div class="campus-img-wrap">
+          <img src="https://images.unsplash.com/photo-1576502200916-3808e07386a5?w=480&q=80&fit=crop" alt="Princeton University" loading="lazy" referrerpolicy="no-referrer" />
+          <span class="campus-img-label">Princeton</span>
+        </div>
+        <!-- Duplicates for seamless scroll loop -->
         <div class="campus-img-wrap" aria-hidden="true">
-          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b6/Sunset_at_the_Memorial_Church%2C_Stanford_University.jpg/640px-Sunset_at_the_Memorial_Church%2C_Stanford_University.jpg" alt="" loading="lazy" />
+          <img src="https://images.unsplash.com/photo-1629337943021-a9b7e89289c8?w=480&q=80&fit=crop" alt="" loading="lazy" referrerpolicy="no-referrer" />
           <span class="campus-img-label">Stanford</span>
         </div>
         <div class="campus-img-wrap" aria-hidden="true">
-          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/MIT_Dome_night1_Edit.jpg/640px-MIT_Dome_night1_Edit.jpg" alt="" loading="lazy" />
+          <img src="https://images.unsplash.com/photo-1541829070764-84a7d30dd3f3?w=480&q=80&fit=crop" alt="" loading="lazy" referrerpolicy="no-referrer" />
           <span class="campus-img-label">MIT</span>
         </div>
         <div class="campus-img-wrap" aria-hidden="true">
-          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/8b/Doe_Library%2C_UC_Berkeley.jpg/640px-Doe_Library%2C_UC_Berkeley.jpg" alt="" loading="lazy" />
+          <img src="https://images.unsplash.com/photo-1583373834259-46cc92173cb7?w=480&q=80&fit=crop" alt="" loading="lazy" referrerpolicy="no-referrer" />
           <span class="campus-img-label">UC Berkeley</span>
+        </div>
+        <div class="campus-img-wrap" aria-hidden="true">
+          <img src="https://images.unsplash.com/photo-1562774053-701939374585?w=480&q=80&fit=crop" alt="" loading="lazy" referrerpolicy="no-referrer" />
+          <span class="campus-img-label">Vanderbilt</span>
         </div>
       </div>
     </div>
@@ -130,19 +113,12 @@
   <!-- ══════════════════════════════════════════════
        SURVEY
   ══════════════════════════════════════════════ -->
->>>>>>> 981ebb6 (Push)
   <section id="screen-survey" class="screen">
     <nav class="nav-bar survey-nav">
       <div class="logo">CollegeMatch</div>
       <button class="btn-ghost" onclick="restart()">Start over</button>
     </nav>
     <div class="survey-wrap">
-<<<<<<< HEAD
-      <div class="progress-track">
-        <div class="progress-fill" id="progress-fill"></div>
-      </div>
-      <div class="step-label" id="step-label"></div>
-=======
 
       <!-- Enhanced progress indicator -->
       <div class="progress-container">
@@ -156,7 +132,6 @@
         <div class="progress-dots" id="progress-dots"></div>
       </div>
 
->>>>>>> 981ebb6 (Push)
       <h2 class="q-text" id="q-text"></h2>
       <div class="options-grid" id="options-grid"></div>
       <div class="survey-footer">
@@ -169,13 +144,6 @@
     </div>
   </section>
 
-<<<<<<< HEAD
-  <!-- RESULTS -->
-  <section id="screen-results" class="screen">
-    <nav class="nav-bar">
-      <div class="logo">CollegeMatch</div>
-      <button class="btn-ghost" onclick="restart()">← Retake survey</button>
-=======
   <!-- ══════════════════════════════════════════════
        LOADING
   ══════════════════════════════════════════════ -->
@@ -212,17 +180,12 @@
         </button>
         <button class="btn-ghost" onclick="restart()">← Retake survey</button>
       </div>
->>>>>>> 981ebb6 (Push)
     </nav>
     <div class="results-wrap">
       <div class="results-header">
         <div class="results-eyebrow">Your personalized results</div>
         <h2 class="results-title" id="results-title">Your top college matches</h2>
-<<<<<<< HEAD
-        <p class="results-sub">Based on your major interest, location, size, budget, GPA, and campus vibe preferences.</p>
-=======
         <p class="results-sub" id="results-sub">Based on your academic profile, preferences, and real admissions data.</p>
->>>>>>> 981ebb6 (Push)
       </div>
 
       <div class="results-grid" id="results-grid"></div>
@@ -238,17 +201,11 @@
 
       <div class="results-footer">
         <button class="btn-primary" onclick="restart()">Retake with different answers</button>
-<<<<<<< HEAD
-        <p class="disclaimer">Results are for exploration only. Always research schools directly and speak with a counselor.</p>
-=======
         <p class="disclaimer">Results are powered by U.S. Department of Education College Scorecard data. Always research schools directly and speak with a counselor before making decisions.</p>
->>>>>>> 981ebb6 (Push)
       </div>
     </div>
   </section>
 
-<<<<<<< HEAD
-=======
   <!-- ══════════════════════════════════════════════
        COMPARE MODAL
   ══════════════════════════════════════════════ -->
@@ -262,7 +219,6 @@
     </div>
   </div>
 
->>>>>>> 981ebb6 (Push)
   <script src="script.js"></script>
 </body>
 </html>

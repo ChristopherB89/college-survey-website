@@ -1,10 +1,128 @@
-<<<<<<< HEAD
-/* ════════════════════════════════════════════════════════════════
+/* ════════════════════════════════════════════════════════════════════
    CollegeMatch — script.js
-   Survey flow, matching algorithm, and results rendering
-   ════════════════════════════════════════════════════════════════ */
+   Features:
+   - 11 survey questions (6 original + 5 new preference questions)
+   - College Scorecard API integration (U.S. Dept. of Education)
+   - Claude AI-powered match explanations via Anthropic API
+   - Advanced multi-factor scoring algorithm
+   - Side-by-side school comparison
+   - Real campus images via curated mapping
+   - Loading states, skeleton loaders, graceful error handling
+   ════════════════════════════════════════════════════════════════════ */
 
-/* ─── Survey Questions ─────────────────────────────────────────── */
+/* ─── API Configuration ──────────────────────────────────────────────
+   Get your free College Scorecard API key at:
+   https://collegescorecard.ed.gov/data/api/
+   
+   Get your Anthropic API key at:
+   https://console.anthropic.com/
+   ─────────────────────────────────────────────────────────────────── */
+const SCORECARD_API_KEY = 'YOUR_COLLEGE_SCORECARD_API_KEY_HERE';
+const ANTHROPIC_API_KEY = 'YOUR_ANTHROPIC_API_KEY_HERE';
+
+const SCORECARD_BASE = 'https://api.data.gov/ed/collegescorecard/v1/schools';
+
+/* ─── Campus Image Map ───────────────────────────────────────────────
+   All images sourced from Unsplash (hotlink-friendly, no key needed)
+   or stable public CDNs that allow cross-origin embedding.
+   Key = lowercase substring of school name (partial match).
+   Falls back to a generated placeholder gradient if no match found.
+   ─────────────────────────────────────────────────────────────────── */
+const CAMPUS_IMAGES = {
+  // ── Ivy League & Elite Private ──────────────────────────────────
+  'mit':                      'https://images.unsplash.com/photo-1541829070764-84a7d30dd3f3?w=640&q=80&fit=crop',
+  'massachusetts institute':  'https://images.unsplash.com/photo-1541829070764-84a7d30dd3f3?w=640&q=80&fit=crop',
+  'harvard':                  'https://images.unsplash.com/photo-1567057419565-4349c49d8a04?w=640&q=80&fit=crop',
+  'stanford':                 'https://images.unsplash.com/photo-1629337943021-a9b7e89289c8?w=640&q=80&fit=crop',
+  'yale':                     'https://images.unsplash.com/photo-1607237138185-eedd9c632b0b?w=640&q=80&fit=crop',
+  'princeton':                'https://images.unsplash.com/photo-1576502200916-3808e07386a5?w=640&q=80&fit=crop',
+  'columbia':                 'https://images.unsplash.com/photo-1498243691581-b145c3f54a5a?w=640&q=80&fit=crop',
+  'cornell':                  'https://images.unsplash.com/photo-1607237138185-eedd9c632b0b?w=640&q=80&fit=crop',
+  'dartmouth':                'https://images.unsplash.com/photo-1562774053-701939374585?w=640&q=80&fit=crop',
+  'brown':                    'https://images.unsplash.com/photo-1607237138185-eedd9c632b0b?w=640&q=80&fit=crop',
+  'university of pennsylvania':'https://images.unsplash.com/photo-1498243691581-b145c3f54a5a?w=640&q=80&fit=crop',
+  'caltech':                  'https://images.unsplash.com/photo-1541829070764-84a7d30dd3f3?w=640&q=80&fit=crop',
+  'california institute':     'https://images.unsplash.com/photo-1541829070764-84a7d30dd3f3?w=640&q=80&fit=crop',
+
+  // ── UC System ───────────────────────────────────────────────────
+  'uc berkeley':              'https://images.unsplash.com/photo-1583373834259-46cc92173cb7?w=640&q=80&fit=crop',
+  'berkeley':                 'https://images.unsplash.com/photo-1583373834259-46cc92173cb7?w=640&q=80&fit=crop',
+  'ucla':                     'https://images.unsplash.com/photo-1607237138185-eedd9c632b0b?w=640&q=80&fit=crop',
+  'uc san diego':             'https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=640&q=80&fit=crop',
+  'uc santa barbara':         'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=640&q=80&fit=crop',
+  'uc davis':                 'https://images.unsplash.com/photo-1562774053-701939374585?w=640&q=80&fit=crop',
+  'uc irvine':                'https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=640&q=80&fit=crop',
+
+  // ── Southeast ───────────────────────────────────────────────────
+  'duke':                     'https://images.unsplash.com/photo-1607237138185-eedd9c632b0b?w=640&q=80&fit=crop',
+  'vanderbilt':               'https://images.unsplash.com/photo-1562774053-701939374585?w=640&q=80&fit=crop',
+  'emory':                    'https://images.unsplash.com/photo-1562774053-701939374585?w=640&q=80&fit=crop',
+  'georgia tech':             'https://images.unsplash.com/photo-1567769541715-8c71fe49fd43?w=640&q=80&fit=crop',
+  'georgia institute':        'https://images.unsplash.com/photo-1567769541715-8c71fe49fd43?w=640&q=80&fit=crop',
+  'unc':                      'https://images.unsplash.com/photo-1562774053-701939374585?w=640&q=80&fit=crop',
+  'chapel hill':              'https://images.unsplash.com/photo-1562774053-701939374585?w=640&q=80&fit=crop',
+  'university of virginia':   'https://images.unsplash.com/photo-1607237138185-eedd9c632b0b?w=640&q=80&fit=crop',
+  'wake forest':              'https://images.unsplash.com/photo-1562774053-701939374585?w=640&q=80&fit=crop',
+  'tulane':                   'https://images.unsplash.com/photo-1567769541715-8c71fe49fd43?w=640&q=80&fit=crop',
+  'university of florida':    'https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=640&q=80&fit=crop',
+  'florida state':            'https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=640&q=80&fit=crop',
+
+  // ── Midwest ─────────────────────────────────────────────────────
+  'university of chicago':    'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=640&q=80&fit=crop',
+  'northwestern':             'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=640&q=80&fit=crop',
+  'university of michigan':   'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=640&q=80&fit=crop',
+  'michigan':                 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=640&q=80&fit=crop',
+  'notre dame':               'https://images.unsplash.com/photo-1576502200916-3808e07386a5?w=640&q=80&fit=crop',
+  'purdue':                   'https://images.unsplash.com/photo-1562774053-701939374585?w=640&q=80&fit=crop',
+  'ohio state':               'https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=640&q=80&fit=crop',
+  'penn state':               'https://images.unsplash.com/photo-1562774053-701939374585?w=640&q=80&fit=crop',
+  'case western':             'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=640&q=80&fit=crop',
+  'washington university':    'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=640&q=80&fit=crop',
+
+  // ── Northeast ───────────────────────────────────────────────────
+  'nyu':                      'https://images.unsplash.com/photo-1499092346589-b9b6be3e94b2?w=640&q=80&fit=crop',
+  'new york university':      'https://images.unsplash.com/photo-1499092346589-b9b6be3e94b2?w=640&q=80&fit=crop',
+  'boston university':        'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=640&q=80&fit=crop',
+  'northeastern':             'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=640&q=80&fit=crop',
+  'georgetown':               'https://images.unsplash.com/photo-1576502200916-3808e07386a5?w=640&q=80&fit=crop',
+  'tufts':                    'https://images.unsplash.com/photo-1562774053-701939374585?w=640&q=80&fit=crop',
+  'carnegie mellon':          'https://images.unsplash.com/photo-1541829070764-84a7d30dd3f3?w=640&q=80&fit=crop',
+
+  // ── South / Southwest ───────────────────────────────────────────
+  'rice':                     'https://images.unsplash.com/photo-1567769541715-8c71fe49fd43?w=640&q=80&fit=crop',
+  'university of texas':      'https://images.unsplash.com/photo-1567769541715-8c71fe49fd43?w=640&q=80&fit=crop',
+  'ut austin':                'https://images.unsplash.com/photo-1567769541715-8c71fe49fd43?w=640&q=80&fit=crop',
+  'university of colorado':   'https://images.unsplash.com/photo-1567057419565-4349c49d8a04?w=640&q=80&fit=crop',
+  'arizona state':            'https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=640&q=80&fit=crop',
+
+  // ── West Coast ──────────────────────────────────────────────────
+  'usc':                      'https://images.unsplash.com/photo-1629337943021-a9b7e89289c8?w=640&q=80&fit=crop',
+  'university of southern california': 'https://images.unsplash.com/photo-1629337943021-a9b7e89289c8?w=640&q=80&fit=crop',
+  'university of washington': 'https://images.unsplash.com/photo-1567057419565-4349c49d8a04?w=640&q=80&fit=crop',
+  'pepperdine':               'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=640&q=80&fit=crop',
+  'santa clara':              'https://images.unsplash.com/photo-1629337943021-a9b7e89289c8?w=640&q=80&fit=crop',
+  'howard':                   'https://images.unsplash.com/photo-1576502200916-3808e07386a5?w=640&q=80&fit=crop',
+};
+
+/* ─── Region → State Codes Map ──────────────────────────────────── */
+const REGION_STATES = {
+  northeast: ['ME','NH','VT','MA','RI','CT','NY','NJ','PA','DE','MD','DC'],
+  southeast: ['VA','NC','SC','GA','FL','TN','AL','MS','KY','WV'],
+  midwest:   ['OH','IN','IL','MI','WI','MN','IA','MO','ND','SD','NE','KS'],
+  south:     ['TX','OK','AR','LA','AZ','NM','CO','NV','UT'],
+  west:      ['CA','OR','WA','ID','MT','WY','AK','HI'],
+};
+
+/* ─── Major → CIP Code Map ──────────────────────────────────────── */
+const MAJOR_FIELDS = {
+  stem:        'latest.academics.program_percentage.computer',
+  business:    'latest.academics.program_percentage.business_marketing',
+  liberal_arts:'latest.academics.program_percentage.liberal_arts',
+  arts:        'latest.academics.program_percentage.visual_performing',
+  health:      'latest.academics.program_percentage.health',
+};
+
+/* ─── Survey Questions (11 total) ───────────────────────────────── */
 const QUESTIONS = [
   {
     key: 'major',
@@ -21,11 +139,11 @@ const QUESTIONS = [
     key: 'region',
     text: 'Where would you like to go to school?',
     opts: [
-      { value: 'northeast', label: 'Northeast',   sub: 'ME, NH, VT, MA, RI, CT, NY, NJ, PA' },
-      { value: 'southeast', label: 'Southeast',   sub: 'MD, VA, NC, SC, GA, FL, TN, AL, MS' },
-      { value: 'midwest',   label: 'Midwest',     sub: 'OH, IN, IL, MI, WI, MN, IA, MO, KS' },
-      { value: 'south',     label: 'South / SW',  sub: 'TX, OK, AR, LA, AZ, NM, CO' },
-      { value: 'west',      label: 'West Coast',  sub: 'CA, OR, WA, NV, UT, ID, MT, WY' },
+      { value: 'northeast', label: 'Northeast',     sub: 'ME, NH, VT, MA, RI, CT, NY, NJ, PA, MD, DC' },
+      { value: 'southeast', label: 'Southeast',     sub: 'VA, NC, SC, GA, FL, TN, AL, MS, KY' },
+      { value: 'midwest',   label: 'Midwest',       sub: 'OH, IN, IL, MI, WI, MN, IA, MO, KS' },
+      { value: 'south',     label: 'South / SW',    sub: 'TX, OK, AR, LA, AZ, NM, CO, NV, UT' },
+      { value: 'west',      label: 'West Coast',    sub: 'CA, OR, WA, ID, MT, WY, HI, AK' },
       { value: 'any',       label: 'No preference', sub: 'Open to schools across the country' },
     ]
   },
@@ -42,259 +160,87 @@ const QUESTIONS = [
     key: 'budget',
     text: 'How important is keeping tuition costs low?',
     opts: [
-      { value: 'low',    label: 'Very important',   sub: 'Looking for in-state publics, scholarships, or need-blind schools' },
-      { value: 'medium', label: 'Somewhat important', sub: 'Cost matters but I have some flexibility' },
-      { value: 'high',   label: 'Not a major factor', sub: 'I\'m open to any school regardless of sticker price' },
-=======
-/* ==========================================================================
-   CollegeMatch — script.js
-   ========================================================================== */
-
-const COLLEGE_SCORECARD_API_KEY = 'qMACfvWIWAzQ6KZGdhgl9ZUvnelKr8YbUND0HXP0';
-
-const API_BASE =
-  'https://api.data.gov/ed/collegescorecard/v1/schools';
-
-const API_FIELDS = [
-  'school.name',
-  'school.city',
-  'school.state',
-  'school.school_url',
-  'latest.student.size',
-  'latest.admissions.admission_rate.overall',
-  'latest.admissions.sat_scores.average.overall',
-  'latest.cost.avg_net_price.overall',
-  'latest.completion.rate_suppressed.overall',
-  'latest.student.demographics.race_ethnicity.minority',
-  'latest.earnings.10_yrs_after_entry.median',
-  'latest.academics.program_available.engineering',
-  'latest.academics.program_available.computer',
-  'latest.academics.program_available.business_marketing',
-  'latest.academics.program_available.biological',
-  'latest.academics.program_available.psychology',
-  'latest.academics.program_available.education',
-  'latest.academics.program_available.visual_performing'
-].join(',');
-
-const QUESTIONS = [
-  {
-    key: 'major',
-    text: 'What field are you most interested in studying?',
-    options: [
-      'Computer Science',
-      'Engineering',
-      'Business',
-      'Biology',
-      'Psychology',
-      'Education',
-      'Art & Design'
->>>>>>> 981ebb6 (Push)
+      { value: 'low',    label: 'Very important',      sub: 'Looking for in-state publics, scholarships, or need-blind schools' },
+      { value: 'medium', label: 'Somewhat important',  sub: 'Cost matters but I have some flexibility' },
+      { value: 'high',   label: 'Not a major factor',  sub: "I'm open to any school regardless of sticker price" },
     ]
   },
   {
     key: 'gpa',
-<<<<<<< HEAD
-    text: 'What\'s your approximate high school GPA?',
+    text: "What's your approximate high school GPA?",
     opts: [
-      { value: 'high',     label: '3.8 and above',  sub: 'Highly competitive applicant' },
-      { value: 'med_high', label: '3.3 – 3.7',      sub: 'Strong academic record' },
-      { value: 'medium',   label: '2.8 – 3.2',      sub: 'Solid record with room to grow' },
-      { value: 'low',      label: 'Below 2.8',       sub: 'GPA isn\'t my strongest metric' },
+      { value: 'high',     label: '3.8 and above', sub: 'Highly competitive applicant' },
+      { value: 'med_high', label: '3.3 – 3.7',     sub: 'Strong academic record' },
+      { value: 'medium',   label: '2.8 – 3.2',     sub: 'Solid record with room to grow' },
+      { value: 'low',      label: 'Below 2.8',      sub: "GPA isn't my strongest metric" },
     ]
   },
   {
     key: 'vibe',
     text: 'What kind of campus life are you looking for?',
     opts: [
-      { value: 'academic',  label: 'Academically intense',   sub: 'Research, intellectual culture, rigorous coursework' },
-      { value: 'balanced',  label: 'Balanced',               sub: 'Strong academics plus a real social life' },
-      { value: 'social',    label: 'Vibrant social scene',   sub: 'Greek life, big sports culture, active parties' },
-      { value: 'community', label: 'Tight-knit community',   sub: 'Everyone knows each other, collaborative not competitive' },
-=======
-    text: 'What is your approximate GPA?',
-    options: ['4.0+', '3.8–3.99', '3.5–3.79', '3.2–3.49', 'Below 3.2']
-  },
-  {
-    key: 'region',
-    text: 'Which region do you prefer?',
-    options: ['West', 'Northeast', 'South', 'Midwest', 'No preference']
-  },
-  {
-    key: 'budget',
-    text: 'What annual net price feels comfortable?',
-    options: [
-      'Under $20,000',
-      '$20,000–$35,000',
-      '$35,000–$55,000',
-      '$55,000+',
-      'Flexible'
+      { value: 'academic',  label: 'Academically intense',  sub: 'Research, intellectual culture, rigorous coursework' },
+      { value: 'balanced',  label: 'Balanced',              sub: 'Strong academics plus a real social life' },
+      { value: 'social',    label: 'Vibrant social scene',  sub: 'Greek life, big sports culture, active parties' },
+      { value: 'community', label: 'Tight-knit community',  sub: 'Everyone knows each other, collaborative not competitive' },
     ]
   },
   {
-    key: 'size',
-    text: 'What campus size do you prefer?',
-    options: ['Small', 'Medium', 'Large', 'No preference']
-  },
-  {
     key: 'weather',
-    text: 'What weather do you prefer?',
-    options: [
-      'Warm and sunny',
-      'Four seasons',
-      'Cold and snowy',
-      'No preference'
+    text: 'What kind of weather do you prefer on campus?',
+    opts: [
+      { value: 'warm',     label: 'Warm and sunny',   sub: 'Southern California, Florida, Texas — sunshine year-round' },
+      { value: 'seasons',  label: 'Four seasons',     sub: 'Midwest, Northeast — crisp falls, snowy winters, warm summers' },
+      { value: 'cold',     label: 'Cold and snowy',   sub: 'New England, upper Midwest — bundling up culture' },
+      { value: 'any',      label: 'No preference',    sub: "Weather isn't a dealbreaker for me" },
     ]
   },
   {
     key: 'social',
-    text: 'What kind of social environment do you want?',
-    options: [
-      'Party-oriented',
-      'Balanced social life',
-      'Academically focused',
-      'Quiet and low-key'
+    text: 'What best describes your ideal social environment?',
+    opts: [
+      { value: 'party',     label: 'Party-oriented',        sub: 'Big Greek life, tailgates, and vibrant nightlife' },
+      { value: 'balanced',  label: 'Balanced social life',  sub: 'Mix of social events and academic focus' },
+      { value: 'academic',  label: 'Academically focused',  sub: 'Study groups, research events, and intellectual gatherings' },
+      { value: 'quiet',     label: 'Quiet and low-key',     sub: 'Small gatherings, outdoor activities, calm campus culture' },
     ]
   },
   {
     key: 'distance',
-    text: 'How far from home would you like to be?',
-    options: [
-      'Close to home',
-      'A few hours away',
-      'Across the country',
-      'No preference'
+    text: 'How far from home are you willing to go?',
+    opts: [
+      { value: 'close',    label: 'Close to home',        sub: 'Within a couple hours drive' },
+      { value: 'medium',   label: 'A few hours away',     sub: 'Same region, manageable road trip' },
+      { value: 'far',      label: 'Across the country',   sub: "I'm ready for a completely fresh start" },
+      { value: 'any',      label: 'No preference',        sub: "Distance doesn't matter to me" },
     ]
   },
   {
     key: 'diversity',
-    text: 'How important is campus diversity?',
-    options: [
-      'Very important',
-      'Somewhat important',
-      'Not important'
+    text: 'How important is campus diversity to you?',
+    opts: [
+      { value: 'very',      label: 'Very important',      sub: 'I want to learn alongside people from many backgrounds' },
+      { value: 'somewhat',  label: 'Somewhat important',  sub: "It's a nice-to-have but not a dealbreaker" },
+      { value: 'not',       label: 'Not important',       sub: "I don't factor this into my decision" },
     ]
   },
   {
-    key: 'internships',
-    text: 'How important are internship opportunities?',
-    options: [
-      'Very important',
-      'Somewhat important',
-      'Not important'
+    key: 'internship',
+    text: 'How important are internship and career opportunities?',
+    opts: [
+      { value: 'very',      label: 'Very important',      sub: "Career pipelines, co-ops, and industry connections are a top priority" },
+      { value: 'somewhat',  label: 'Somewhat important',  sub: "I want options but it's not my primary focus" },
+      { value: 'not',       label: 'Not important',       sub: "I'm focused more on academics or personal growth" },
     ]
   },
-  {
-    key: 'selectivity',
-    text: 'What type of admissions profile are you looking for?',
-    options: [
-      'Highly selective',
-      'Moderately selective',
-      'Accessible',
-      'No preference'
->>>>>>> 981ebb6 (Push)
-    ]
-  }
 ];
 
-<<<<<<< HEAD
-/* ─── College Database (80+ schools) ───────────────────────────── */
-const COLLEGES = [
-  // ── Northeast ──
-  { name: 'MIT', location: 'Cambridge, MA', region: 'northeast', size: 'medium', majors: ['stem'], budget: 'high', gpa: 'high', vibe: 'academic', tuition: '$57,986', acceptance: '4%', tags: ['Research powerhouse', 'STEM-only feel', 'Urban', 'Need-blind'] },
-  { name: 'Harvard University', location: 'Cambridge, MA', region: 'northeast', size: 'medium', majors: ['liberal_arts', 'stem', 'health'], budget: 'high', gpa: 'high', vibe: 'academic', tuition: '$57,261', acceptance: '3%', tags: ['Ivy League', 'Need-blind', 'Historic campus'] },
-  { name: 'Yale University', location: 'New Haven, CT', region: 'northeast', size: 'medium', majors: ['liberal_arts', 'arts', 'health'], budget: 'high', gpa: 'high', vibe: 'balanced', tuition: '$62,250', acceptance: '5%', tags: ['Ivy League', 'Strong arts scene', 'Residential colleges'] },
-  { name: 'Princeton University', location: 'Princeton, NJ', region: 'northeast', size: 'medium', majors: ['liberal_arts', 'stem'], budget: 'high', gpa: 'high', vibe: 'academic', tuition: '$57,690', acceptance: '4%', tags: ['Ivy League', 'No grad student TAs', 'No loans'] },
-  { name: 'Columbia University', location: 'New York, NY', region: 'northeast', size: 'medium', majors: ['liberal_arts', 'stem', 'business'], budget: 'high', gpa: 'high', vibe: 'balanced', tuition: '$65,524', acceptance: '4%', tags: ['Ivy League', 'NYC immersion', 'Core curriculum'] },
-  { name: 'Cornell University', location: 'Ithaca, NY', region: 'northeast', size: 'large', majors: ['stem', 'business', 'liberal_arts', 'arts'], budget: 'high', gpa: 'high', vibe: 'balanced', tuition: '$61,015', acceptance: '9%', tags: ['Ivy League', 'Gorges & waterfalls', 'Hotel school'] },
-  { name: 'Dartmouth College', location: 'Hanover, NH', region: 'northeast', size: 'small', majors: ['liberal_arts', 'business'], budget: 'high', gpa: 'high', vibe: 'community', tuition: '$61,947', acceptance: '6%', tags: ['Ivy League', 'Rural campus', 'D-Plan (4 terms)'] },
-  { name: 'Brown University', location: 'Providence, RI', region: 'northeast', size: 'medium', majors: ['liberal_arts', 'stem', 'arts'], budget: 'high', gpa: 'high', vibe: 'balanced', tuition: '$65,146', acceptance: '5%', tags: ['Ivy League', 'Open curriculum', 'Collaborative culture'] },
-  { name: 'University of Pennsylvania', location: 'Philadelphia, PA', region: 'northeast', size: 'medium', majors: ['business', 'health', 'stem'], budget: 'high', gpa: 'high', vibe: 'academic', tuition: '$63,452', acceptance: '7%', tags: ['Ivy League', 'Wharton', 'Pre-professional focus'] },
-  { name: 'Williams College', location: 'Williamstown, MA', region: 'northeast', size: 'small', majors: ['liberal_arts'], budget: 'high', gpa: 'high', vibe: 'community', tuition: '$60,680', acceptance: '9%', tags: ['#1 liberal arts', 'Rural & stunning', 'No loans'] },
-  { name: 'Amherst College', location: 'Amherst, MA', region: 'northeast', size: 'small', majors: ['liberal_arts'], budget: 'high', gpa: 'high', vibe: 'academic', tuition: '$63,012', acceptance: '11%', tags: ['Open curriculum', 'Five Colleges', 'Need-blind'] },
-  { name: 'Swarthmore College', location: 'Swarthmore, PA', region: 'northeast', size: 'small', majors: ['liberal_arts', 'stem'], budget: 'high', gpa: 'high', vibe: 'academic', tuition: '$60,712', acceptance: '9%', tags: ['Honor code', 'Quaker values', 'Near Philadelphia'] },
-  { name: 'Wellesley College', location: 'Wellesley, MA', region: 'northeast', size: 'small', majors: ['liberal_arts', 'stem'], budget: 'high', gpa: 'high', vibe: 'community', tuition: '$60,576', acceptance: '20%', tags: ["Women's college", 'Near Boston', 'Strong alumnae network'] },
-  { name: 'Vassar College', location: 'Poughkeepsie, NY', region: 'northeast', size: 'small', majors: ['liberal_arts', 'arts'], budget: 'medium', gpa: 'high', vibe: 'community', tuition: '$62,990', acceptance: '22%', tags: ['Coed liberal arts', 'Progressive culture', 'Arts-forward'] },
-  { name: 'Boston University', location: 'Boston, MA', region: 'northeast', size: 'large', majors: ['health', 'business', 'arts', 'stem'], budget: 'medium', gpa: 'med_high', vibe: 'balanced', tuition: '$60,000', acceptance: '19%', tags: ['Urban campus', 'Pre-med pipeline', 'Charles River'] },
-  { name: 'Northeastern University', location: 'Boston, MA', region: 'northeast', size: 'medium', majors: ['stem', 'business'], budget: 'medium', gpa: 'med_high', vibe: 'balanced', tuition: '$59,000', acceptance: '20%', tags: ['Co-op program', 'Career-focused', 'Urban'] },
-  { name: 'Tufts University', location: 'Medford, MA', region: 'northeast', size: 'medium', majors: ['liberal_arts', 'stem', 'health'], budget: 'high', gpa: 'high', vibe: 'balanced', tuition: '$65,222', acceptance: '11%', tags: ['NESCAC adjacent', 'Civic engagement', 'Near Boston'] },
-  { name: 'NYU', location: 'New York, NY', region: 'northeast', size: 'large', majors: ['arts', 'business', 'liberal_arts', 'health'], budget: 'medium', gpa: 'med_high', vibe: 'social', tuition: '$58,168', acceptance: '13%', tags: ['No traditional campus', 'NYC immersion', 'Tisch arts'] },
-  { name: 'Georgetown University', location: 'Washington, DC', region: 'northeast', size: 'medium', majors: ['liberal_arts', 'business', 'health'], budget: 'high', gpa: 'high', vibe: 'balanced', tuition: '$61,872', acceptance: '13%', tags: ['DC access', 'Policy & law focus', 'Jesuit values'] },
-  { name: 'George Washington University', location: 'Washington, DC', region: 'northeast', size: 'medium', majors: ['liberal_arts', 'business', 'health'], budget: 'medium', gpa: 'med_high', vibe: 'social', tuition: '$60,865', acceptance: '41%', tags: ['DC access', 'Political scene', 'Foggy Bottom'] },
-  { name: 'American University', location: 'Washington, DC', region: 'northeast', size: 'medium', majors: ['liberal_arts', 'business'], budget: 'medium', gpa: 'med_high', vibe: 'balanced', tuition: '$53,072', acceptance: '35%', tags: ['Policy & advocacy', 'DC internships', 'Diverse campus'] },
-  { name: 'Rochester Institute of Technology', location: 'Rochester, NY', region: 'northeast', size: 'medium', majors: ['stem', 'arts', 'business'], budget: 'medium', gpa: 'med_high', vibe: 'academic', tuition: '$55,878', acceptance: '63%', tags: ['Co-op program', 'Tech + design', 'Deaf-friendly'] },
-  { name: 'RISD', location: 'Providence, RI', region: 'northeast', size: 'small', majors: ['arts'], budget: 'medium', gpa: 'med_high', vibe: 'academic', tuition: '$55,166', acceptance: '22%', tags: ['Top art school', 'Brown cross-reg', 'Studio-intensive'] },
-  { name: 'Berklee College of Music', location: 'Boston, MA', region: 'northeast', size: 'small', majors: ['arts'], budget: 'medium', gpa: 'medium', vibe: 'community', tuition: '$47,440', acceptance: '51%', tags: ['Music-only', 'Industry connections', 'Performance focus'] },
-  { name: 'University of Vermont', location: 'Burlington, VT', region: 'northeast', size: 'medium', majors: ['health', 'liberal_arts', 'stem'], budget: 'low', gpa: 'medium', vibe: 'balanced', tuition: '$19,392 (in-state)', acceptance: '68%', tags: ['Outdoorsy culture', 'Skiing nearby', 'Farm to table'] },
-  { name: 'University of Connecticut', location: 'Storrs, CT', region: 'northeast', size: 'large', majors: ['business', 'health', 'stem'], budget: 'low', gpa: 'medium', vibe: 'social', tuition: '$16,380 (in-state)', acceptance: '56%', tags: ['Big basketball culture', 'State flagship', 'Affordable'] },
-  { name: 'Penn State University', location: 'State College, PA', region: 'northeast', size: 'large', majors: ['business', 'stem', 'liberal_arts'], budget: 'low', gpa: 'medium', vibe: 'social', tuition: '$18,450 (in-state)', acceptance: '54%', tags: ['Nittany Lions', 'Huge alumni network', 'College town'] },
-  { name: 'Rutgers University', location: 'New Brunswick, NJ', region: 'northeast', size: 'large', majors: ['stem', 'business', 'liberal_arts', 'health'], budget: 'low', gpa: 'medium', vibe: 'balanced', tuition: '$14,638 (in-state)', acceptance: '67%', tags: ['NJ flagship', 'Research university', 'Diverse student body'] },
-
-  // ── Southeast ──
-  { name: 'Duke University', location: 'Durham, NC', region: 'southeast', size: 'medium', majors: ['health', 'stem', 'liberal_arts', 'business'], budget: 'high', gpa: 'high', vibe: 'balanced', tuition: '$60,244', acceptance: '6%', tags: ['Basketball culture', 'Gothic architecture', 'Duke Forest'] },
-  { name: 'Vanderbilt University', location: 'Nashville, TN', region: 'southeast', size: 'medium', majors: ['health', 'liberal_arts', 'business', 'stem'], budget: 'high', gpa: 'high', vibe: 'social', tuition: '$60,348', acceptance: '7%', tags: ['Nashville access', 'Greek life heavy', 'Strong med school'] },
-  { name: 'Emory University', location: 'Atlanta, GA', region: 'southeast', size: 'medium', majors: ['health', 'business', 'liberal_arts'], budget: 'high', gpa: 'high', vibe: 'academic', tuition: '$57,592', acceptance: '11%', tags: ['CDC/WHO proximity', 'Pre-med powerhouse', 'Atlanta access'] },
-  { name: 'Wake Forest University', location: 'Winston-Salem, NC', region: 'southeast', size: 'medium', majors: ['business', 'liberal_arts', 'health'], budget: 'high', gpa: 'high', vibe: 'balanced', tuition: '$61,440', acceptance: '20%', tags: ['Pro humanitate', 'Strong Greek life', 'Business school'] },
-  { name: 'University of Miami', location: 'Coral Gables, FL', region: 'southeast', size: 'medium', majors: ['business', 'health', 'arts', 'stem'], budget: 'high', gpa: 'med_high', vibe: 'social', tuition: '$58,664', acceptance: '27%', tags: ['South Florida lifestyle', 'Music school', 'Near Miami'] },
-  { name: 'UNC Chapel Hill', location: 'Chapel Hill, NC', region: 'southeast', size: 'large', majors: ['health', 'business', 'liberal_arts', 'stem'], budget: 'low', gpa: 'med_high', vibe: 'balanced', tuition: '$7,008 (in-state)', acceptance: '19%', tags: ['ACC sports', 'Research Triangle', 'Public ivy'] },
-  { name: 'University of Virginia', location: 'Charlottesville, VA', region: 'southeast', size: 'large', majors: ['business', 'liberal_arts', 'health', 'stem'], budget: 'low', gpa: 'high', vibe: 'balanced', tuition: '$17,400 (in-state)', acceptance: '21%', tags: ['Grounds not campus', 'Honor tradition', 'Public ivy'] },
-  { name: 'University of Florida', location: 'Gainesville, FL', region: 'southeast', size: 'large', majors: ['stem', 'business', 'health'], budget: 'low', gpa: 'med_high', vibe: 'social', tuition: '$6,381 (in-state)', acceptance: '31%', tags: ['Gators', 'Top public', 'Very affordable'] },
-  { name: 'University of Georgia', location: 'Athens, GA', region: 'southeast', size: 'large', majors: ['business', 'liberal_arts', 'health'], budget: 'low', gpa: 'medium', vibe: 'social', tuition: '$9,790 (in-state)', acceptance: '45%', tags: ['SEC sports', 'Athens music scene', 'College town'] },
-  { name: 'Georgia Tech', location: 'Atlanta, GA', region: 'southeast', size: 'large', majors: ['stem', 'business'], budget: 'low', gpa: 'high', vibe: 'academic', tuition: '$10,258 (in-state)', acceptance: '17%', tags: ['STEM powerhouse', 'Co-op program', 'Atlanta access'] },
-  { name: 'Florida State University', location: 'Tallahassee, FL', region: 'southeast', size: 'large', majors: ['business', 'liberal_arts', 'arts'], budget: 'low', gpa: 'medium', vibe: 'social', tuition: '$5,656 (in-state)', acceptance: '36%', tags: ['ACC sports', 'Affordable', 'Film program'] },
-  { name: 'Howard University', location: 'Washington, DC', region: 'southeast', size: 'medium', majors: ['health', 'business', 'liberal_arts', 'stem'], budget: 'medium', gpa: 'medium', vibe: 'community', tuition: '$29,564', acceptance: '37%', tags: ['Prestigious HBCU', 'DC access', 'Strong alumni network'] },
-  { name: 'Spelman College', location: 'Atlanta, GA', region: 'southeast', size: 'small', majors: ['health', 'liberal_arts', 'stem'], budget: 'medium', gpa: 'med_high', vibe: 'community', tuition: '$28,722', acceptance: '34%', tags: ["HBCU women's college", 'AUC consortium', 'High grad school rate'] },
-  { name: 'Morehouse College', location: 'Atlanta, GA', region: 'southeast', size: 'small', majors: ['liberal_arts', 'business', 'stem'], budget: 'medium', gpa: 'medium', vibe: 'community', tuition: '$30,000', acceptance: '58%', tags: ["HBCU men's college", 'Leadership focus', 'MLK legacy'] },
-  { name: 'Tulane University', location: 'New Orleans, LA', region: 'southeast', size: 'medium', majors: ['health', 'liberal_arts', 'business'], budget: 'high', gpa: 'med_high', vibe: 'social', tuition: '$60,264', acceptance: '13%', tags: ['New Orleans culture', 'Service learning', 'Strong Greek life'] },
-
-  // ── Midwest ──
-  { name: 'University of Chicago', location: 'Chicago, IL', region: 'midwest', size: 'medium', majors: ['liberal_arts', 'stem', 'business'], budget: 'high', gpa: 'high', vibe: 'academic', tuition: '$62,238', acceptance: '7%', tags: ['Core curriculum', 'Intellectual rigor', 'Hyde Park'] },
-  { name: 'Northwestern University', location: 'Evanston, IL', region: 'midwest', size: 'medium', majors: ['liberal_arts', 'stem', 'business', 'arts'], budget: 'high', gpa: 'high', vibe: 'balanced', tuition: '$63,468', acceptance: '7%', tags: ['Medill journalism', 'Near Chicago', 'Lake Michigan'] },
-  { name: 'University of Notre Dame', location: 'Notre Dame, IN', region: 'midwest', size: 'medium', majors: ['business', 'liberal_arts', 'stem', 'health'], budget: 'high', gpa: 'high', vibe: 'community', tuition: '$59,794', acceptance: '13%', tags: ['Catholic tradition', 'Fighting Irish football', 'Loyal alumni'] },
-  { name: 'University of Michigan', location: 'Ann Arbor, MI', region: 'midwest', size: 'large', majors: ['stem', 'business', 'health', 'liberal_arts'], budget: 'medium', gpa: 'med_high', vibe: 'balanced', tuition: '$16,736 (in-state)', acceptance: '20%', tags: ['Big Ten', 'Ross School of Business', 'Ann Arbor culture'] },
-  { name: 'Washington University in St. Louis', location: 'St. Louis, MO', region: 'midwest', size: 'medium', majors: ['health', 'stem', 'liberal_arts', 'arts'], budget: 'high', gpa: 'high', vibe: 'balanced', tuition: '$60,590', acceptance: '13%', tags: ['WashU', 'Near Forest Park', 'Architecture school'] },
-  { name: 'Case Western Reserve', location: 'Cleveland, OH', region: 'midwest', size: 'medium', majors: ['stem', 'health', 'business'], budget: 'medium', gpa: 'high', vibe: 'academic', tuition: '$56,856', acceptance: '30%', tags: ['Strong pre-med', 'Cleveland Clinic partnership', 'Research'] },
-  { name: 'University of Wisconsin–Madison', location: 'Madison, WI', region: 'midwest', size: 'large', majors: ['liberal_arts', 'stem', 'business'], budget: 'low', gpa: 'med_high', vibe: 'social', tuition: '$10,728 (in-state)', acceptance: '51%', tags: ['Party reputation', 'Research university', 'State Street'] },
-  { name: 'Ohio State University', location: 'Columbus, OH', region: 'midwest', size: 'large', majors: ['business', 'health', 'stem', 'liberal_arts'], budget: 'low', gpa: 'medium', vibe: 'social', tuition: '$11,518 (in-state)', acceptance: '54%', tags: ['Big Ten sports', 'Buckeye nation', 'Affordable'] },
-  { name: 'Purdue University', location: 'West Lafayette, IN', region: 'midwest', size: 'large', majors: ['stem', 'business'], budget: 'low', gpa: 'med_high', vibe: 'academic', tuition: '$9,992 (in-state)', acceptance: '60%', tags: ['Engineering powerhouse', 'Affordable STEM', 'Big Ten'] },
-  { name: 'University of Illinois Urbana-Champaign', location: 'Champaign, IL', region: 'midwest', size: 'large', majors: ['stem', 'business', 'liberal_arts'], budget: 'low', gpa: 'med_high', vibe: 'balanced', tuition: '$15,054 (in-state)', acceptance: '45%', tags: ['Top CS program', 'Big Ten', 'College town'] },
-  { name: 'Grinnell College', location: 'Grinnell, IA', region: 'midwest', size: 'small', majors: ['liberal_arts'], budget: 'medium', gpa: 'high', vibe: 'community', tuition: '$58,718', acceptance: '16%', tags: ['Need-blind', 'Open curriculum', 'Quirky & progressive'] },
-  { name: 'Carleton College', location: 'Northfield, MN', region: 'midwest', size: 'small', majors: ['liberal_arts', 'stem'], budget: 'medium', gpa: 'high', vibe: 'community', tuition: '$62,112', acceptance: '18%', tags: ['Strong STEM for liberal arts', 'Arboretum', 'Friendly culture'] },
-  { name: 'Macalester College', location: 'St. Paul, MN', region: 'midwest', size: 'small', majors: ['liberal_arts'], budget: 'medium', gpa: 'high', vibe: 'community', tuition: '$62,604', acceptance: '31%', tags: ['International focus', 'Urban setting', 'Social justice'] },
-
-  // ── South & Southwest ──
-  { name: 'Rice University', location: 'Houston, TX', region: 'south', size: 'small', majors: ['stem', 'liberal_arts', 'arts', 'business'], budget: 'high', gpa: 'high', vibe: 'community', tuition: '$54,960', acceptance: '9%', tags: ['Residential college system', 'Need-blind', 'No-loan'] },
-  { name: 'UT Austin', location: 'Austin, TX', region: 'south', size: 'large', majors: ['stem', 'business', 'liberal_arts', 'arts'], budget: 'low', gpa: 'med_high', vibe: 'social', tuition: '$11,248 (in-state)', acceptance: '31%', tags: ['Austin tech scene', 'Longhorns', 'Top 40 honors'] },
-  { name: 'Texas A&M University', location: 'College Station, TX', region: 'south', size: 'large', majors: ['stem', 'business', 'health'], budget: 'low', gpa: 'medium', vibe: 'community', tuition: '$8,875 (in-state)', acceptance: '63%', tags: ['Aggie traditions', 'Strong engineering', 'Affordable'] },
-  { name: 'Southern Methodist University', location: 'Dallas, TX', region: 'south', size: 'medium', majors: ['business', 'liberal_arts', 'arts'], budget: 'high', gpa: 'med_high', vibe: 'social', tuition: '$58,500', acceptance: '50%', tags: ['Dallas access', 'Meadows arts', 'Business focus'] },
-  { name: 'Baylor University', location: 'Waco, TX', region: 'south', size: 'large', majors: ['health', 'business', 'liberal_arts'], budget: 'medium', gpa: 'medium', vibe: 'community', tuition: '$52,942', acceptance: '61%', tags: ['Christian tradition', 'Bears sports', 'Health programs'] },
-  { name: 'University of Arizona', location: 'Tucson, AZ', region: 'south', size: 'large', majors: ['stem', 'business', 'health', 'liberal_arts'], budget: 'low', gpa: 'medium', vibe: 'social', tuition: '$12,467 (in-state)', acceptance: '85%', tags: ['Desert campus', 'Astronomy program', 'Wildcat sports'] },
-  { name: 'Arizona State University', location: 'Tempe, AZ', region: 'south', size: 'large', majors: ['stem', 'business', 'liberal_arts', 'arts'], budget: 'low', gpa: 'low', vibe: 'social', tuition: '$11,800 (in-state)', acceptance: '88%', tags: ['Innovation focus', 'Sun Devils', 'Very large campus'] },
-  { name: 'University of Colorado Boulder', location: 'Boulder, CO', region: 'south', size: 'large', majors: ['stem', 'business', 'liberal_arts'], budget: 'low', gpa: 'medium', vibe: 'balanced', tuition: '$11,374 (in-state)', acceptance: '84%', tags: ['Outdoor lifestyle', 'Buffs athletics', 'Boulder culture'] },
-  { name: 'Colorado College', location: 'Colorado Springs, CO', region: 'south', size: 'small', majors: ['liberal_arts'], budget: 'medium', gpa: 'med_high', vibe: 'community', tuition: '$62,844', acceptance: '18%', tags: ['Block plan (one class at a time)', 'Outdoorsy', 'Unique academic model'] },
-
-  // ── West Coast ──
-  { name: 'Stanford University', location: 'Stanford, CA', region: 'west', size: 'medium', majors: ['stem', 'business', 'liberal_arts'], budget: 'high', gpa: 'high', vibe: 'balanced', tuition: '$56,169', acceptance: '4%', tags: ['Silicon Valley hub', 'Entrepreneurship culture', 'Need-blind'] },
-  { name: 'Caltech', location: 'Pasadena, CA', region: 'west', size: 'small', majors: ['stem'], budget: 'high', gpa: 'high', vibe: 'academic', tuition: '$60,816', acceptance: '3%', tags: ['STEM only', 'Small cohort', 'Research-intensive'] },
-  { name: 'Harvey Mudd College', location: 'Claremont, CA', region: 'west', size: 'small', majors: ['stem'], budget: 'high', gpa: 'high', vibe: 'community', tuition: '$62,648', acceptance: '13%', tags: ['STEM + humanities', 'Collaborative culture', '5C Consortium'] },
-  { name: 'Pomona College', location: 'Claremont, CA', region: 'west', size: 'small', majors: ['liberal_arts'], budget: 'high', gpa: 'high', vibe: 'community', tuition: '$59,880', acceptance: '9%', tags: ['Top liberal arts west', '5C Consortium', 'Need-blind'] },
-  { name: 'Claremont McKenna College', location: 'Claremont, CA', region: 'west', size: 'small', majors: ['business', 'liberal_arts'], budget: 'high', gpa: 'high', vibe: 'balanced', tuition: '$60,375', acceptance: '10%', tags: ['Policy & government', '5C Consortium', 'Leadership focus'] },
-  { name: 'UC Berkeley', location: 'Berkeley, CA', region: 'west', size: 'large', majors: ['stem', 'business', 'liberal_arts'], budget: 'low', gpa: 'med_high', vibe: 'academic', tuition: '$14,312 (in-state)', acceptance: '12%', tags: ['Public ivy', 'Activist culture', '#1 public university'] },
-  { name: 'UCLA', location: 'Los Angeles, CA', region: 'west', size: 'large', majors: ['stem', 'arts', 'business', 'health'], budget: 'low', gpa: 'med_high', vibe: 'social', tuition: '$13,239 (in-state)', acceptance: '9%', tags: ['LA access', 'Film industry', 'Bruins athletics'] },
-  { name: 'UC San Diego', location: 'La Jolla, CA', region: 'west', size: 'large', majors: ['stem', 'health', 'liberal_arts'], budget: 'low', gpa: 'med_high', vibe: 'academic', tuition: '$14,388 (in-state)', acceptance: '24%', tags: ['Oceanfront campus', 'Research powerhouse', 'STEM-heavy'] },
-  { name: 'USC', location: 'Los Angeles, CA', region: 'west', size: 'large', majors: ['business', 'arts', 'stem', 'liberal_arts'], budget: 'high', gpa: 'med_high', vibe: 'social', tuition: '$65,446', acceptance: '12%', tags: ['Trojan network', 'Film school', 'LA connections'] },
-  { name: 'UC Santa Barbara', location: 'Santa Barbara, CA', region: 'west', size: 'large', majors: ['stem', 'liberal_arts', 'business'], budget: 'low', gpa: 'medium', vibe: 'social', tuition: '$14,313 (in-state)', acceptance: '37%', tags: ['Beach campus', 'Party reputation', 'Strong research'] },
-  { name: 'University of Washington', location: 'Seattle, WA', region: 'west', size: 'large', majors: ['stem', 'health', 'business'], budget: 'low', gpa: 'med_high', vibe: 'academic', tuition: '$12,076 (in-state)', acceptance: '49%', tags: ['Seattle tech scene', 'Amazon/Microsoft proximity', 'Huskies'] },
-  { name: 'Oregon State University', location: 'Corvallis, OR', region: 'west', size: 'large', majors: ['stem', 'health', 'business'], budget: 'low', gpa: 'medium', vibe: 'balanced', tuition: '$12,960 (in-state)', acceptance: '83%', tags: ['Outdoorsy', 'Engineering programs', 'Affordable'] },
-  { name: 'University of Oregon', location: 'Eugene, OR', region: 'west', size: 'large', majors: ['business', 'arts', 'liberal_arts'], budget: 'low', gpa: 'medium', vibe: 'balanced', tuition: '$12,720 (in-state)', acceptance: '83%', tags: ['Nike founder alma mater', 'Pac-12', 'Eugene outdoors'] },
-  { name: 'Reed College', location: 'Portland, OR', region: 'west', size: 'small', majors: ['liberal_arts'], budget: 'medium', gpa: 'high', vibe: 'academic', tuition: '$61,830', acceptance: '31%', tags: ['Thesis required', 'Nonconformist culture', 'Intellectual intensity'] },
-  { name: 'Gonzaga University', location: 'Spokane, WA', region: 'west', size: 'medium', majors: ['business', 'liberal_arts', 'health'], budget: 'medium', gpa: 'medium', vibe: 'community', tuition: '$49,900', acceptance: '71%', tags: ['Basketball culture', 'Jesuit values', 'Pacific Northwest'] },
-  { name: 'Pepperdine University', location: 'Malibu, CA', region: 'west', size: 'small', majors: ['business', 'liberal_arts', 'health'], budget: 'high', gpa: 'med_high', vibe: 'community', tuition: '$60,816', acceptance: '37%', tags: ['Oceanfront campus', 'Christian values', 'Strong business school'] },
-  { name: 'Santa Clara University', location: 'Santa Clara, CA', region: 'west', size: 'medium', majors: ['business', 'stem', 'liberal_arts'], budget: 'high', gpa: 'med_high', vibe: 'balanced', tuition: '$58,950', acceptance: '51%', tags: ['Silicon Valley location', 'Jesuit', 'Business & tech'] },
-];
-
-/* ─── State ──────────────────────────────────────────────────────── */
+/* ─── State ─────────────────────────────────────────────────────── */
 let currentQ = 0;
 const answers = {};
+let resultsData = [];        // Scored school objects for compare
+const compareSet = new Set(); // School unitids selected for comparison
+let apiCache = {};           // Cache Scorecard responses
 
 /* ─── Utility: show a screen ──────────────────────────────────────── */
 function showScreen(id) {
@@ -303,26 +249,39 @@ function showScreen(id) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-/* ─── Survey ─────────────────────────────────────────────────────── */
+/* ─── Survey ──────────────────────────────────────────────────────── */
 function startSurvey() {
   currentQ = 0;
   Object.keys(answers).forEach(k => delete answers[k]);
+  compareSet.clear();
   renderQuestion();
   showScreen('survey');
 }
 
 function renderQuestion() {
-  const q = QUESTIONS[currentQ];
-  const pct = (currentQ / QUESTIONS.length) * 100;
+  const q   = QUESTIONS[currentQ];
+  const pct = Math.round((currentQ / QUESTIONS.length) * 100);
 
+  // Progress bar + percentage text
   document.getElementById('progress-fill').style.width = pct + '%';
   document.getElementById('step-label').textContent =
     'Question ' + (currentQ + 1) + ' of ' + QUESTIONS.length;
+  document.getElementById('progress-pct').textContent = pct + '% Complete';
+
+  // Render dot indicators
+  const dotsEl = document.getElementById('progress-dots');
+  dotsEl.innerHTML = '';
+  for (let i = 0; i < QUESTIONS.length; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'progress-dot' +
+      (i < currentQ ? ' done' : i === currentQ ? ' active' : '');
+    dotsEl.appendChild(dot);
+  }
+
   document.getElementById('q-text').textContent = q.text;
 
   const grid = document.getElementById('options-grid');
   grid.innerHTML = '';
-
   q.opts.forEach(opt => {
     const div = document.createElement('div');
     div.className = 'option-item' + (answers[q.key] === opt.value ? ' selected' : '');
@@ -336,13 +295,12 @@ function renderQuestion() {
     grid.appendChild(div);
   });
 
-  const btnNext = document.getElementById('btn-next');
+  const btnNext  = document.getElementById('btn-next');
   const nextLabel = document.getElementById('next-label');
   nextLabel.textContent = currentQ === QUESTIONS.length - 1 ? 'See my matches' : 'Continue';
   btnNext.disabled = !answers[q.key];
 
-  const btnBack = document.getElementById('btn-back');
-  btnBack.style.visibility = currentQ === 0 ? 'hidden' : 'visible';
+  document.getElementById('btn-back').style.visibility = currentQ === 0 ? 'hidden' : 'visible';
 }
 
 function selectOption(value) {
@@ -362,786 +320,833 @@ function goNext() {
     renderQuestion();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   } else {
-    showResults();
+    fetchAndShowResults();
   }
 }
 
 function goBack() {
-  if (currentQ > 0) {
-    currentQ--;
-=======
-const FALLBACK_COLLEGES = [
-  {
-    name: 'Stanford University',
-    city: 'Stanford',
-    state: 'CA',
-    website: 'https://www.stanford.edu',
-    tuition: 62000,
-    netPrice: 21000,
-    acceptanceRate: 0.04,
-    satAverage: 1520,
-    size: 17700,
-    graduationRate: 0.95,
-    diversity: 0.65,
-    earnings: 125000,
-    programs: ['Computer Science', 'Engineering', 'Business']
-  },
-  {
-    name: 'University of California-San Diego',
-    city: 'La Jolla',
-    state: 'CA',
-    website: 'https://www.ucsd.edu',
-    tuition: 15000,
-    netPrice: 18000,
-    acceptanceRate: 0.24,
-    satAverage: 1400,
-    size: 43000,
-    graduationRate: 0.88,
-    diversity: 0.78,
-    earnings: 90000,
-    programs: ['Computer Science', 'Biology', 'Engineering']
-  },
-  {
-    name: 'University of Michigan-Ann Arbor',
-    city: 'Ann Arbor',
-    state: 'MI',
-    website: 'https://www.umich.edu',
-    tuition: 18000,
-    netPrice: 19000,
-    acceptanceRate: 0.18,
-    satAverage: 1430,
-    size: 52000,
-    graduationRate: 0.92,
-    diversity: 0.52,
-    earnings: 85000,
-    programs: ['Engineering', 'Business', 'Psychology']
-  },
-  {
-    name: 'University of Texas at Austin',
-    city: 'Austin',
-    state: 'TX',
-    website: 'https://www.utexas.edu',
-    tuition: 12000,
-    netPrice: 17000,
-    acceptanceRate: 0.31,
-    satAverage: 1370,
-    size: 52000,
-    graduationRate: 0.87,
-    diversity: 0.70,
-    earnings: 82000,
-    programs: ['Computer Science', 'Business', 'Engineering']
-  }
+  if (currentQ > 0) { currentQ--; renderQuestion(); }
+}
+
+/* ─── Loading Screen Helpers ─────────────────────────────────────── */
+const LOADING_MESSAGES = [
+  'Analyzing your academic profile...',
+  'Filtering schools by region & budget...',
+  'Comparing GPA to admissions data...',
+  'Scoring preference compatibility...',
+  'Generating AI explanations...',
 ];
 
-const CAMPUS_IMAGES = {
-  'Stanford University':
-    'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b6/Sunset_at_the_Memorial_Church%2C_Stanford_University.jpg/1280px-Sunset_at_the_Memorial_Church%2C_Stanford_University.jpg',
-
-  'University of California-San Diego':
-    'https://upload.wikimedia.org/wikipedia/commons/thumb/5/58/Geisel_Library_%28University_of_California%2C_San_Diego%29.jpg/1280px-Geisel_Library_%28University_of_California%2C_San_Diego%29.jpg',
-
-  'University of Michigan-Ann Arbor':
-    'https://upload.wikimedia.org/wikipedia/commons/thumb/0/06/University_of_Michigan_Law_Quadrangle.jpg/1280px-University_of_Michigan_Law_Quadrangle.jpg',
-
-  'University of Texas at Austin':
-    'https://upload.wikimedia.org/wikipedia/commons/thumb/4/48/UT_Austin_Tower.jpg/1280px-UT_Austin_Tower.jpg'
-};
-
-const state = {
-  currentQuestion: 0,
-  answers: {},
-  results: [],
-  compare: [],
-  rating: 0
-};
-
-const $ = (id) => document.getElementById(id);
-
-function showScreen(id) {
-  document.querySelectorAll('.screen').forEach((s) => {
-    s.classList.remove('active');
-  });
-
-  $(id).classList.add('active');
-
-  window.scrollTo({
-    top: 0,
-    behavior: 'smooth'
-  });
-}
-
-function startSurvey() {
-  state.currentQuestion = 0;
-  state.answers = {};
-
-  renderQuestion();
-
-  showScreen('screen-survey');
-}
-
-function restart() {
-  state.results = [];
-  state.compare = [];
-
-  showScreen('screen-landing');
-}
-
-function renderQuestion() {
-  const question = QUESTIONS[state.currentQuestion];
-
-  $('q-text').textContent = question.text;
-
-  const grid = $('options-grid');
-  grid.innerHTML = '';
-
-  question.options.forEach((option) => {
-    const item = document.createElement('div');
-
-    item.className = 'option-item';
-
-    if (state.answers[question.key] === option) {
-      item.classList.add('selected');
-    }
-
-    item.innerHTML = `
-      <div class="option-radio"></div>
-      <div class="option-label">${option}</div>
-    `;
-
-    item.addEventListener('click', () => {
-      state.answers[question.key] = option;
-
-      renderQuestion();
-    });
-
-    grid.appendChild(item);
-  });
-
-  $('btn-next').disabled = !state.answers[question.key];
-
-  $('next-label').textContent =
-    state.currentQuestion === QUESTIONS.length - 1
-      ? 'Find My Matches'
-      : 'Continue';
-
-  $('btn-back').style.visibility =
-    state.currentQuestion === 0 ? 'hidden' : 'visible';
-
-  updateProgress();
-}
-
-function updateProgress() {
-  const total = QUESTIONS.length;
-
-  const current = state.currentQuestion + 1;
-
-  const pct = Math.round((state.currentQuestion / total) * 100);
-
-  $('step-label').textContent =
-    `Question ${current} of ${total}`;
-
-  $('progress-pct').textContent =
-    `${pct}% Complete`;
-
-  $('progress-fill').style.width = `${pct}%`;
-
-  const dots = $('progress-dots');
-
-  dots.innerHTML = '';
-
-  for (let i = 0; i < total; i++) {
-    const dot = document.createElement('div');
-
-    dot.className = 'progress-dot';
-
-    if (i < state.currentQuestion) {
-      dot.classList.add('done');
-    }
-
-    if (i === state.currentQuestion) {
-      dot.classList.add('active');
-    }
-
-    dots.appendChild(dot);
-  }
-}
-
-function goNext() {
-  if (state.currentQuestion < QUESTIONS.length - 1) {
-    state.currentQuestion++;
-
-    renderQuestion();
-
-    return;
+function animateLoadingSteps() {
+  let step = 0;
+  const titleEl = document.getElementById('loading-title');
+  // Reset all steps
+  for (let i = 0; i < 5; i++) {
+    const el = document.getElementById('lstep-' + i);
+    el.classList.remove('active', 'done');
   }
 
-  generateMatches();
-}
-
-function goBack() {
-  if (state.currentQuestion > 0) {
-    state.currentQuestion--;
-
->>>>>>> 981ebb6 (Push)
-    renderQuestion();
+  function advance() {
+    if (step > 0) {
+      document.getElementById('lstep-' + (step - 1)).classList.remove('active');
+      document.getElementById('lstep-' + (step - 1)).classList.add('done');
+    }
+    if (step < 5) {
+      document.getElementById('lstep-' + step).classList.add('active');
+      titleEl.textContent = LOADING_MESSAGES[step] || 'Almost there...';
+      step++;
+    }
   }
+
+  advance();
+  return setInterval(advance, 1600);
 }
 
-<<<<<<< HEAD
-/* ─── Matching Algorithm ─────────────────────────────────────────── */
+/* ─── College Scorecard API Fetch ────────────────────────────────── */
+async function fetchColleges() {
+  // Build query params based on answers
+  const params = new URLSearchParams({
+    api_key: SCORECARD_API_KEY,
+    per_page: 80,
+    fields: [
+      'id',
+      'school.name',
+      'school.city',
+      'school.state',
+      'school.school_url',
+      'school.ownership',
+      'latest.student.size',
+      'latest.admissions.admission_rate.overall',
+      'latest.admissions.sat_scores.midpoint.critical_reading',
+      'latest.admissions.sat_scores.midpoint.math',
+      'latest.admissions.act_scores.midpoint.cumulative',
+      'latest.cost.tuition.in_state',
+      'latest.cost.tuition.out_of_state',
+      'latest.cost.avg_net_price.public',
+      'latest.cost.avg_net_price.private',
+      'latest.completion.rate_suppressed.overall',
+      'latest.student.demographics.race_ethnicity.white',
+      'latest.earnings.10_yrs_after_entry.median',
+      'latest.academics.program_percentage.computer',
+      'latest.academics.program_percentage.business_marketing',
+      'latest.academics.program_percentage.liberal_arts',
+      'latest.academics.program_percentage.visual_performing',
+      'latest.academics.program_percentage.health',
+      'latest.academics.program_percentage.engineering',
+      'latest.academics.program_percentage.biological',
+      'latest.academics.program_percentage.social_science',
+    ].join(','),
+    // Only 4-year degree-granting institutions
+    'school.degrees_awarded.predominant': 3,
+    // Exclude schools with no admission rate data
+    'latest.admissions.admission_rate.overall__range': '0.01..1',
+  });
+
+  // Apply region filter
+  if (answers.region !== 'any') {
+    const states = REGION_STATES[answers.region] || [];
+    if (states.length) params.append('school.state', states.join(','));
+  }
+
+  // Apply size filter — student population range
+  const sizeRanges = {
+    small:  '0..4000',
+    medium: '4000..15000',
+    large:  '15000..200000',
+  };
+  if (sizeRanges[answers.size]) {
+    params.append('latest.student.size__range', sizeRanges[answers.size]);
+  }
+
+  // Bias toward schools with significant programs in chosen major
+  const majorField = MAJOR_FIELDS[answers.major];
+  if (majorField) {
+    // Require at least 2% of students in this program area
+    params.append(majorField + '__range', '0.02..1');
+  }
+
+  // Sort by admission rate (to surface a mix of selectivity levels)
+  params.append('sort', 'latest.admissions.admission_rate.overall:asc');
+
+  const cacheKey = params.toString();
+  if (apiCache[cacheKey]) return apiCache[cacheKey];
+
+  const url = `${SCORECARD_BASE}?${params}`;
+  const res  = await fetch(url);
+  if (!res.ok) throw new Error(`Scorecard API error: ${res.status}`);
+  const data = await res.json();
+
+  // Normalize results
+  const schools = (data.results || []).map(normalizeSchool).filter(Boolean);
+  apiCache[cacheKey] = schools;
+  return schools;
+}
+
+/* ─── Normalize raw API school object ────────────────────────────── */
+function normalizeSchool(raw) {
+  const name = raw['school.name'];
+  if (!name) return null;
+
+  const admissionRate = raw['latest.admissions.admission_rate.overall'];
+  const satMath       = raw['latest.admissions.sat_scores.midpoint.math'];
+  const satRead       = raw['latest.admissions.sat_scores.midpoint.critical_reading'];
+  const actMid        = raw['latest.admissions.act_scores.midpoint.cumulative'];
+  const studentSize   = raw['latest.student.size'];
+  const tuitionIn     = raw['latest.cost.tuition.in_state'];
+  const tuitionOut    = raw['latest.cost.tuition.out_of_state'];
+  const netPricePub   = raw['latest.cost.avg_net_price.public'];
+  const netPricePriv  = raw['latest.cost.avg_net_price.private'];
+  const gradRate      = raw['latest.completion.rate_suppressed.overall'];
+  const earnings      = raw['latest.earnings.10_yrs_after_entry.median'];
+  const diversityPct  = raw['latest.student.demographics.race_ethnicity.white'];
+  const ownership     = raw['school.ownership']; // 1=public, 2/3=private
+
+  // Derive budget tier from avg net price
+  const netPrice = ownership === 1 ? netPricePub : netPricePriv;
+  let budgetTier = 'high';
+  if (netPrice < 15000) budgetTier = 'low';
+  else if (netPrice < 30000) budgetTier = 'medium';
+
+  // Derive size tier
+  let sizeTier = 'medium';
+  if (studentSize < 4000) sizeTier = 'small';
+  else if (studentSize >= 15000) sizeTier = 'large';
+
+  // Derive GPA tier from admission rate (proxy)
+  let gpaTier = 'medium';
+  if (admissionRate < 0.12) gpaTier = 'high';
+  else if (admissionRate < 0.35) gpaTier = 'med_high';
+  else if (admissionRate < 0.65) gpaTier = 'medium';
+  else gpaTier = 'low';
+
+  // Derive vibe from program mix and ownership
+  let vibeTier = 'balanced';
+  const compPct = raw['latest.academics.program_percentage.computer'] || 0;
+  const healthPct = raw['latest.academics.program_percentage.health'] || 0;
+  if (compPct + healthPct > 0.4) vibeTier = 'academic';
+  else if (ownership === 1 && studentSize > 20000) vibeTier = 'social';
+  else if (studentSize < 4000) vibeTier = 'community';
+
+  // State → region mapping
+  const state = raw['school.state'];
+  let regionKey = 'any';
+  for (const [reg, states] of Object.entries(REGION_STATES)) {
+    if (states.includes(state)) { regionKey = reg; break; }
+  }
+
+  // Weather by state
+  const warmStates = ['FL','CA','TX','AZ','NM','NV','HI','GA','SC','LA'];
+  const coldStates = ['MN','WI','MI','ND','SD','MT','ME','VT','NH','AK'];
+  let weatherTier = 'seasons';
+  if (warmStates.includes(state)) weatherTier = 'warm';
+  else if (coldStates.includes(state)) weatherTier = 'cold';
+
+  // Diversity score (lower white% = more diverse)
+  const diversityScore = diversityPct !== null && diversityPct !== undefined
+    ? Math.round((1 - diversityPct) * 100)
+    : 50;
+
+  // Format tuition display
+  const displayTuition = ownership === 1
+    ? (tuitionIn  ? '$' + tuitionIn.toLocaleString()  + ' (in-state)' : 'N/A')
+    : (tuitionOut ? '$' + tuitionOut.toLocaleString() : 'N/A');
+
+  const displayAcceptance = admissionRate
+    ? Math.round(admissionRate * 100) + '%'
+    : 'N/A';
+
+  const displayGradRate = gradRate
+    ? Math.round(gradRate * 100) + '%'
+    : 'N/A';
+
+  const displayEarnings = earnings
+    ? '$' + earnings.toLocaleString()
+    : 'N/A';
+
+  const displaySize = studentSize
+    ? studentSize.toLocaleString() + ' students'
+    : 'N/A';
+
+  // Program strengths
+  const programMap = {
+    'Computer Science':  raw['latest.academics.program_percentage.computer'] || 0,
+    'Business':          raw['latest.academics.program_percentage.business_marketing'] || 0,
+    'Liberal Arts':      raw['latest.academics.program_percentage.liberal_arts'] || 0,
+    'Arts':              raw['latest.academics.program_percentage.visual_performing'] || 0,
+    'Health':            raw['latest.academics.program_percentage.health'] || 0,
+    'Engineering':       raw['latest.academics.program_percentage.engineering'] || 0,
+    'Biology/Life Sci':  raw['latest.academics.program_percentage.biological'] || 0,
+    'Social Sciences':   raw['latest.academics.program_percentage.social_science'] || 0,
+  };
+  const topPrograms = Object.entries(programMap)
+    .filter(([, v]) => v > 0.05)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(([k]) => k);
+
+  return {
+    id:               raw['id'],
+    name,
+    city:             raw['school.city'],
+    state,
+    location:         `${raw['school.city']}, ${state}`,
+    website:          raw['school.school_url'],
+    region:           regionKey,
+    sizeTier,
+    budgetTier,
+    gpaTier,
+    vibeTier,
+    weatherTier,
+    diversityScore,
+    admissionRate,
+    netPrice,
+    ownership,
+    // Raw numeric fields for scoring
+    studentSize,
+    satMath,
+    satRead,
+    actMid,
+    gradRate,
+    earnings,
+    programMap,
+    topPrograms,
+    // Formatted display
+    displayTuition,
+    displayAcceptance,
+    displayGradRate,
+    displayEarnings,
+    displaySize,
+  };
+}
+
+/* ─── Matching & Scoring Algorithm ──────────────────────────────── */
+
+// Weight config
 const WEIGHTS = {
-  major:  35,
-  region: 20,
-  size:   15,
-  budget: 15,
-  gpa:    10,
-  vibe:   5,
+  major:      30,
+  region:     15,
+  size:       12,
+  budget:     12,
+  gpa:        10,
+  vibe:        6,
+  weather:     5,
+  social:      4,
+  diversity:   3,
+  internship:  3,
 };
 
-function scoreCollege(col) {
+function scoreCollege(school) {
   let total = 0;
 
-  // Major — hard filter first, then score
-  if (col.majors.includes(answers.major)) total += WEIGHTS.major;
-
-  // Region — full points if match or no preference
-  if (answers.region === 'any' || col.region === answers.region) total += WEIGHTS.region;
-
-  // Size
-  if (col.size === answers.size) total += WEIGHTS.size;
-
-  // Budget (cost sensitivity)
-  const budgetOk = {
-    low:    ['low'],
-    medium: ['low', 'medium'],
-    high:   ['low', 'medium', 'high'],
+  // ── MAJOR (30 pts) ──────────────────────────────────────────────
+  // Score based on how strong the relevant program is (% of students)
+  const majorPctMap = {
+    stem:        (school.programMap['Computer Science'] || 0) + (school.programMap['Engineering'] || 0) + (school.programMap['Biology/Life Sci'] || 0),
+    business:     school.programMap['Business'] || 0,
+    liberal_arts: school.programMap['Liberal Arts'] || 0,
+    arts:         school.programMap['Arts'] || 0,
+    health:       school.programMap['Health'] || 0,
   };
-  if (budgetOk[answers.budget]?.includes(col.budget)) total += WEIGHTS.budget;
+  const majorPct = majorPctMap[answers.major] || 0;
+  // Scale: >25% = full points, proportional otherwise, min 5pts if any presence
+  const majorScore = majorPct > 0.01
+    ? Math.min(WEIGHTS.major, Math.round((majorPct / 0.25) * WEIGHTS.major))
+    : 0;
+  total += majorScore;
 
-  // GPA — permissive downward (school accepts gpa or below)
-  const gpaRank = { high: 3, med_high: 2, medium: 1, low: 0 };
-  if (gpaRank[col.gpa] <= gpaRank[answers.gpa]) total += WEIGHTS.gpa;
+  // ── REGION (15 pts) ────────────────────────────────────────────
+  if (answers.region === 'any' || school.region === answers.region) {
+    total += WEIGHTS.region;
+  } else {
+    // Partial credit for adjacent regions
+    const adjacent = {
+      northeast: ['midwest','southeast'],
+      southeast: ['northeast','south','midwest'],
+      midwest:   ['northeast','south','west'],
+      south:     ['southeast','midwest','west'],
+      west:      ['south','midwest'],
+    };
+    if ((adjacent[answers.region] || []).includes(school.region)) {
+      total += Math.round(WEIGHTS.region * 0.4);
+    }
+  }
 
-  // Vibe
-  if (col.vibe === answers.vibe) total += WEIGHTS.vibe;
+  // ── SIZE (12 pts) ──────────────────────────────────────────────
+  if (school.sizeTier === answers.size) {
+    total += WEIGHTS.size;
+  } else {
+    // Partial for adjacent sizes
+    const sizeOrder = ['small','medium','large'];
+    const dist = Math.abs(sizeOrder.indexOf(school.sizeTier) - sizeOrder.indexOf(answers.size));
+    if (dist === 1) total += Math.round(WEIGHTS.size * 0.5);
+  }
 
-  return total;
-}
-
-function buildWhyText(col) {
-  const factors = [];
-  const majorLabels = { stem: 'STEM', business: 'business', liberal_arts: 'liberal arts', arts: 'arts & design', health: 'health sciences' };
-  const vibeLabels  = { academic: 'academically rigorous culture', balanced: 'balanced campus life', social: 'active social scene', community: 'tight-knit community' };
-  const sizeLabels  = { small: 'small campus size', medium: 'medium-sized campus', large: 'large campus' };
-
-  if (col.majors.includes(answers.major)) factors.push(majorLabels[answers.major] || 'your major');
-  if (col.size === answers.size) factors.push(sizeLabels[col.size]);
-  if (col.vibe === answers.vibe) factors.push(vibeLabels[col.vibe]);
-
+  // ── BUDGET (12 pts) ────────────────────────────────────────────
   const budgetOk = { low: ['low'], medium: ['low','medium'], high: ['low','medium','high'] };
-  if (budgetOk[answers.budget]?.includes(col.budget)) factors.push('your budget range');
+  if ((budgetOk[answers.budget] || []).includes(school.budgetTier)) {
+    total += WEIGHTS.budget;
+  }
 
-  if (!factors.length) return 'Aligns with several of your preferences.';
-  const listed = factors.length === 1 ? factors[0]
-    : factors.slice(0, -1).join(', ') + ', and ' + factors[factors.length - 1];
-  return `Matches your interest in ${listed}.`;
+  // ── GPA / SELECTIVITY (10 pts) ─────────────────────────────────
+  // Compare student GPA tier to school's selectivity tier
+  const gpaRank = { high: 3, med_high: 2, medium: 1, low: 0 };
+  const studentGpaRank = gpaRank[answers.gpa] ?? 1;
+  const schoolGpaRank  = gpaRank[school.gpaTier] ?? 1;
+  const gpaDiff = studentGpaRank - schoolGpaRank;
+
+  if (gpaDiff >= 0) {
+    // Student GPA meets or exceeds school typical — good fit
+    total += gpaDiff === 0 ? WEIGHTS.gpa : Math.round(WEIGHTS.gpa * 0.85);
+  } else {
+    // Reach school — partial credit
+    total += Math.max(0, WEIGHTS.gpa + gpaDiff * 3);
+  }
+
+  // ── VIBE (6 pts) ───────────────────────────────────────────────
+  if (school.vibeTier === answers.vibe) total += WEIGHTS.vibe;
+  else if ((answers.vibe === 'balanced' && school.vibeTier !== 'social') ||
+           (answers.vibe === 'academic' && school.vibeTier === 'balanced')) {
+    total += Math.round(WEIGHTS.vibe * 0.5);
+  }
+
+  // ── WEATHER (5 pts) ────────────────────────────────────────────
+  if (answers.weather === 'any' || school.weatherTier === answers.weather) {
+    total += WEIGHTS.weather;
+  }
+
+  // ── SOCIAL ENVIRONMENT (4 pts) ─────────────────────────────────
+  const socialMatch = {
+    party:    ['social'],
+    balanced: ['balanced','community'],
+    academic: ['academic','community'],
+    quiet:    ['community','academic'],
+  };
+  if ((socialMatch[answers.social] || []).includes(school.vibeTier)) {
+    total += WEIGHTS.social;
+  } else if (answers.social === 'balanced') {
+    total += Math.round(WEIGHTS.social * 0.5);
+  }
+
+  // ── DIVERSITY (3 pts) ──────────────────────────────────────────
+  if (answers.diversity === 'not') {
+    total += WEIGHTS.diversity; // No penalty either way
+  } else if (answers.diversity === 'very') {
+    // High diversity score (>50) = full points
+    if (school.diversityScore >= 50) total += WEIGHTS.diversity;
+    else if (school.diversityScore >= 30) total += Math.round(WEIGHTS.diversity * 0.5);
+  } else {
+    // 'somewhat' — any diversity is fine
+    if (school.diversityScore >= 25) total += WEIGHTS.diversity;
+    else total += Math.round(WEIGHTS.diversity * 0.6);
+  }
+
+  // ── INTERNSHIP (3 pts) ─────────────────────────────────────────
+  if (answers.internship === 'not') {
+    total += WEIGHTS.internship;
+  } else {
+    // Proxy: high median earnings & large city = good internship access
+    const earningsGood = school.earnings && school.earnings > 45000;
+    const bigCity      = school.studentSize && school.studentSize > 10000;
+    if (earningsGood && bigCity) total += WEIGHTS.internship;
+    else if (earningsGood || bigCity) total += Math.round(WEIGHTS.internship * 0.6);
+    else if (answers.internship === 'somewhat') total += Math.round(WEIGHTS.internship * 0.4);
+  }
+
+  return Math.min(100, total);
 }
 
-function buildFactorChips(col) {
+/* ─── Match Category Labels ──────────────────────────────────────── */
+function getMatchCategory(pct, school) {
+  const gpaRank = { high: 3, med_high: 2, medium: 1, low: 0 };
+  const studentGpaRank = gpaRank[answers.gpa] ?? 1;
+  const schoolGpaRank  = gpaRank[school.gpaTier] ?? 1;
+  const gpaDiff = studentGpaRank - schoolGpaRank;
+
+  if (pct >= 85) return gpaDiff >= 1 ? 'Safety' : 'Exceptional Match';
+  if (pct >= 72) return gpaDiff >= 0 ? 'Strong Match' : 'Target School';
+  if (pct >= 58) return gpaDiff >= 0 ? 'Good Match' : 'Reach School';
+  if (pct >= 45) return 'Possible Match';
+  return 'Reach School';
+}
+
+function getMatchClass(pct) {
+  if (pct >= 72) return 'match-high';
+  if (pct >= 50) return 'match-med';
+  return 'match-low';
+}
+
+/* ─── Campus Image Lookup ────────────────────────────────────────── */
+function getCampusImage(schoolName) {
+  const lower = schoolName.toLowerCase();
+  for (const [key, url] of Object.entries(CAMPUS_IMAGES)) {
+    if (lower.includes(key)) return url;
+  }
+  return null;
+}
+
+/* ─── Gradient Placeholder ───────────────────────────────────────── */
+// Returns a unique CSS gradient per school so cards never look broken.
+function getPlaceholderGradient(schoolName) {
+  let hash = 0;
+  for (let i = 0; i < schoolName.length; i++) {
+    hash = schoolName.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const hue  = Math.abs(hash) % 360;
+  const hue2 = (hue + 40) % 360;
+  return `linear-gradient(135deg, hsl(${hue},30%,72%), hsl(${hue2},38%,82%))`;
+}
+
+/* ─── AI Explanation via Claude API ──────────────────────────────── */
+async function generateExplanation(school, pct, matchCategory) {
+  const gpaLabels = { high: '3.8+', med_high: '3.3–3.7', medium: '2.8–3.2', low: 'below 2.8' };
+  const majorLabels = { stem: 'STEM', business: 'Business', liberal_arts: 'Liberal Arts', arts: 'Arts & Design', health: 'Health Sciences' };
+
+  const prompt = `You are a college counselor writing a concise, personalized 2-sentence explanation for why a student matched with ${school.name} (${school.location}).
+
+Student profile:
+- Intended major: ${majorLabels[answers.major]}
+- Preferred region: ${answers.region}
+- Campus size preference: ${answers.size}
+- Budget sensitivity: ${answers.budget}
+- GPA range: ${gpaLabels[answers.gpa]}
+- Campus vibe preference: ${answers.vibe}
+- Weather preference: ${answers.weather}
+- Social preference: ${answers.social}
+- Distance preference: ${answers.distance}
+- Diversity importance: ${answers.diversity}
+- Internship importance: ${answers.internship}
+
+School data:
+- Match score: ${pct}% (${matchCategory})
+- Acceptance rate: ${school.displayAcceptance}
+- Avg net price: ${school.netPrice ? '$' + school.netPrice.toLocaleString() : 'N/A'}
+- Graduation rate: ${school.displayGradRate}
+- Median earnings after 10 years: ${school.displayEarnings}
+- Top programs: ${school.topPrograms.join(', ') || 'N/A'}
+- Student population: ${school.displaySize}
+- Diversity index: ${school.diversityScore}%
+
+Write exactly 2 sentences. Sentence 1: why this school fits the student's academic and preference profile. Sentence 2: what makes this a ${matchCategory} and any caveats. Be specific to THIS school — mention the city, programs, or size. Do not use bullet points. Do not start with "This school".`;
+
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1000,
+      messages: [{ role: 'user', content: prompt }],
+    }),
+  });
+
+  if (!response.ok) throw new Error('Anthropic API error: ' + response.status);
+  const data = await response.json();
+  return data.content?.map(b => b.text || '').join('') || '';
+}
+
+/* ─── Factor Chips Builder ───────────────────────────────────────── */
+function buildFactorChips(school, pct) {
   const chips = [];
-  const majorLabels = { stem: 'STEM', business: 'Business', liberal_arts: 'Liberal Arts', arts: 'Arts & Design', health: 'Health' };
+  const majorLabels = { stem: 'STEM', business: 'Business', liberal_arts: 'Liberal Arts', arts: 'Arts & Design', health: 'Health Sciences' };
   const budgetOk = { low: ['low'], medium: ['low','medium'], high: ['low','medium','high'] };
   const gpaRank  = { high: 3, med_high: 2, medium: 1, low: 0 };
 
-  if (col.majors.includes(answers.major))                          chips.push({ label: majorLabels[answers.major], cls: 'factor-major' });
-  if (answers.region === 'any' || col.region === answers.region)   chips.push({ label: 'Location ✓', cls: 'factor-region' });
-  if (col.size === answers.size)                                    chips.push({ label: 'Size ✓', cls: 'factor-size' });
-  if (budgetOk[answers.budget]?.includes(col.budget))             chips.push({ label: 'Budget ✓', cls: 'factor-budget' });
-  if (gpaRank[col.gpa] <= gpaRank[answers.gpa])                   chips.push({ label: 'GPA fit ✓', cls: 'factor-gpa' });
-  if (col.vibe === answers.vibe)                                    chips.push({ label: 'Vibe ✓', cls: 'factor-vibe' });
+  const majorPct = (school.programMap[majorLabels[answers.major]] || 0) +
+    (answers.major === 'stem' ? ((school.programMap['Engineering'] || 0) + (school.programMap['Biology/Life Sci'] || 0)) : 0);
+  if (majorPct > 0.05) chips.push({ label: majorLabels[answers.major] + ' ✓', cls: 'factor-major' });
+
+  if (answers.region === 'any' || school.region === answers.region) chips.push({ label: 'Location ✓', cls: 'factor-region' });
+  if (school.sizeTier === answers.size) chips.push({ label: 'Size ✓', cls: 'factor-size' });
+  if ((budgetOk[answers.budget] || []).includes(school.budgetTier)) chips.push({ label: 'Budget ✓', cls: 'factor-budget' });
+
+  const gpaDiff = (gpaRank[answers.gpa] ?? 1) - (gpaRank[school.gpaTier] ?? 1);
+  if (gpaDiff >= 0) chips.push({ label: gpaDiff >= 1 ? 'GPA Safety ✓' : 'GPA Fit ✓', cls: 'factor-gpa' });
+  else chips.push({ label: 'GPA Reach', cls: 'factor-gpa' });
+
+  if (school.vibeTier === answers.vibe) chips.push({ label: 'Vibe ✓', cls: 'factor-vibe' });
+  if (answers.weather !== 'any' && school.weatherTier === answers.weather) chips.push({ label: 'Weather ✓', cls: 'factor-weather' });
+  if (answers.diversity === 'very' && school.diversityScore >= 50) chips.push({ label: 'Diverse Campus ✓', cls: 'factor-diversity' });
+  if (answers.internship === 'very' && school.earnings > 50000) chips.push({ label: 'Career Outcomes ✓', cls: 'factor-internship' });
 
   return chips;
 }
 
-/* ─── Results Rendering ──────────────────────────────────────────── */
-function showResults() {
-  const scored = COLLEGES
-    .map(col => ({ ...col, score: scoreCollege(col) }))
+/* ─── Skeleton Loaders ───────────────────────────────────────────── */
+function renderSkeletons(grid, count = 5) {
+  grid.innerHTML = '';
+  for (let i = 0; i < count; i++) {
+    const sk = document.createElement('div');
+    sk.className = 'skeleton-card';
+    sk.innerHTML = `
+      <div class="sk-row">
+        <div style="flex:1">
+          <div class="skeleton sk-title"></div>
+          <div class="skeleton sk-sub"></div>
+          <div class="skeleton sk-line"></div>
+          <div class="skeleton sk-line-sm"></div>
+          <div class="skeleton sk-line"></div>
+        </div>
+        <div class="skeleton sk-img"></div>
+      </div>`;
+    grid.appendChild(sk);
+  }
+}
+
+/* ─── Main: Fetch + Score + Render ──────────────────────────────── */
+async function fetchAndShowResults() {
+  showScreen('loading');
+  const stepInterval = animateLoadingSteps();
+
+  let schools = [];
+  let apiWorked = true;
+
+  try {
+    if (SCORECARD_API_KEY === 'YOUR_COLLEGE_SCORECARD_API_KEY_HERE') {
+      throw new Error('No API key configured — using fallback data');
+    }
+    schools = await fetchColleges();
+  } catch (err) {
+    console.warn('College Scorecard API unavailable:', err.message);
+    apiWorked = false;
+    schools = getFallbackSchools();
+  }
+
+  if (!schools.length) {
+    schools = getFallbackSchools();
+    apiWorked = false;
+  }
+
+  // Score and rank
+  const scored = schools
+    .map(s => ({ ...s, score: scoreCollege(s) }))
+    .filter(s => s.score > 0)
     .sort((a, b) => b.score - a.score)
     .slice(0, 5);
 
-  // Update title
-  const majorLabel = {
-    stem: 'STEM', business: 'Business', liberal_arts: 'Liberal Arts',
-    arts: 'Arts & Design', health: 'Health Sciences'
-  };
+  resultsData = scored;
+
+  // Show results screen with skeletons while AI generates
+  clearInterval(stepInterval);
+
+  // Update results header
+  const majorLabel = { stem: 'STEM', business: 'Business', liberal_arts: 'Liberal Arts', arts: 'Arts & Design', health: 'Health Sciences' };
   document.getElementById('results-title').textContent =
     'Your top matches for ' + (majorLabel[answers.major] || 'your goals');
+  document.getElementById('results-sub').textContent =
+    apiWorked
+      ? 'Powered by U.S. Department of Education College Scorecard data. Showing your top 5 personalized matches.'
+      : 'Based on your academic profile and preferences. Add a College Scorecard API key for live data.';
 
   const grid = document.getElementById('results-grid');
-  grid.innerHTML = '';
+  renderSkeletons(grid);
+  showScreen('results');
 
+  // Render cards without AI first (fast)
+  renderCards(scored, grid, false);
+
+  // Build star rating
+  buildStarRating();
+
+  // Now stream AI explanations into each card
+  if (ANTHROPIC_API_KEY !== 'YOUR_ANTHROPIC_API_KEY_HERE') {
+    scored.forEach((school, idx) => {
+      const pct = school.score;
+      const matchCategory = getMatchCategory(pct, school);
+      generateExplanation(school, pct, matchCategory)
+        .then(text => {
+          const el = document.getElementById('why-text-' + idx);
+          if (el) {
+            el.classList.remove('why-loading');
+            el.textContent = text;
+          }
+        })
+        .catch(() => {
+          const el = document.getElementById('why-text-' + idx);
+          if (el) {
+            el.classList.remove('why-loading');
+            el.textContent = buildFallbackExplanation(school, pct, matchCategory);
+          }
+        });
+    });
+  }
+}
+
+/* ─── Render Result Cards ────────────────────────────────────────── */
+function renderCards(scored, grid, withAI) {
+  grid.innerHTML = '';
   const rankLabels = ['Best match', '2nd match', '3rd match', '4th match', '5th match'];
 
-  scored.forEach((col, idx) => {
-    const pct = Math.round((col.score / 100) * 100);
-    const matchClass = pct >= 70 ? 'match-high' : pct >= 45 ? 'match-med' : 'match-low';
-    const chips = buildFactorChips(col);
-    const why   = buildWhyText(col);
+  scored.forEach((school, idx) => {
+    const pct = school.score;
+    const matchCategory = getMatchCategory(pct, school);
+    const matchClass = getMatchClass(pct);
+    const chips = buildFactorChips(school, pct);
+    const imgUrl = getCampusImage(school.name);
+    const websiteHref = school.website
+      ? (school.website.startsWith('http') ? school.website : 'https://' + school.website)
+      : null;
 
     const card = document.createElement('div');
     card.className = 'college-card';
-    card.innerHTML = `
-      <div class="card-rank">${rankLabels[idx]}</div>
-      <div class="card-header">
-        <div>
-          <div class="card-name">${col.name}</div>
-          <div class="card-location">${col.location}</div>
-        </div>
-        <div class="match-badge ${matchClass}">
-          <span class="pct">${pct}%</span>
-          <span class="pct-label">fit</span>
-        </div>
-      </div>
-
-      <hr class="card-divider" />
-
-      <div class="why-section">
-        <div class="why-label">Why this school</div>
-        <div class="why-text">${why}</div>
-        <div class="why-factors">
-          ${chips.map(c => `<span class="factor-chip ${c.cls}">${c.label}</span>`).join('')}
-        </div>
-      </div>
-
-      <div class="card-stats">
-        <div class="stat-item">
-          <span class="stat-label">Tuition</span>
-          <span class="stat-value">${col.tuition}</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-label">Acceptance rate</span>
-          <span class="stat-value">${col.acceptance}</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-label">Campus size</span>
-          <span class="stat-value">${col.size.charAt(0).toUpperCase() + col.size.slice(1)}</span>
-        </div>
-      </div>
-
-      <div class="card-tags">
-        ${col.tags.map(t => `<span class="tag">${t}</span>`).join('')}
-      </div>
-
-      <div class="card-feedback">
-        <button class="fb-btn" id="up-${idx}" onclick="vote(${idx}, 'up')">
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6l5-5 5 5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          Good match
-        </button>
-        <button class="fb-btn" id="dn-${idx}" onclick="vote(${idx}, 'down')">
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 11V1M1 6l5 5 5-5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          Not for me
-        </button>
-      </div>`;
-=======
-async function generateMatches() {
-  showScreen('screen-loading');
-
-  await animateLoading();
-
-  const colleges = await fetchCollegeData();
-
-  const scored = colleges.map((college) => {
-    return scoreCollege(college);
-  });
-
-  scored.sort((a, b) => b.matchScore - a.matchScore);
-
-  state.results = scored.slice(0, 5);
-
-  renderResults();
-
-  showScreen('screen-results');
-}
-
-async function animateLoading() {
-  const titles = [
-    'Analyzing your academic profile...',
-    'Comparing your GPA to admissions data...',
-    'Scoring preference compatibility...',
-    'Generating personalized recommendations...'
-  ];
-
-  for (let i = 0; i < 5; i++) {
-    document.querySelectorAll('.load-step')
-      .forEach((step, idx) => {
-        step.classList.toggle('active', idx === i);
-
-        step.classList.toggle('done', idx < i);
-      });
-
-    $('loading-title').textContent =
-      titles[Math.min(i, titles.length - 1)];
-
-    await delay(700);
-  }
-}
-
-async function fetchCollegeData() {
-  if (
-    !COLLEGE_SCORECARD_API_KEY ||
-    COLLEGE_SCORECARD_API_KEY === 'YOUR_API_KEY_HERE'
-  ) {
-    return FALLBACK_COLLEGES;
-  }
-
-  try {
-    const url = new URL(API_BASE);
-
-    url.searchParams.set(
-      'api_key',
-      COLLEGE_SCORECARD_API_KEY
-    );
-
-    url.searchParams.set('fields', API_FIELDS);
-
-    url.searchParams.set('per_page', '40');
-
-    const response = await fetch(url);
-
-    if (!response.ok) {
-      throw new Error('API request failed');
-    }
-
-    const data = await response.json();
-
-    return data.results.map(normalizeCollege)
-      .filter(Boolean);
-
-  } catch (error) {
-    console.error(error);
-
-    return FALLBACK_COLLEGES;
-  }
-}
-
-function normalizeCollege(raw) {
-  try {
-    const programs = [];
-
-    if (raw['latest.academics.program_available.computer']) {
-      programs.push('Computer Science');
-    }
-
-    if (raw['latest.academics.program_available.engineering']) {
-      programs.push('Engineering');
-    }
-
-    if (raw['latest.academics.program_available.business_marketing']) {
-      programs.push('Business');
-    }
-
-    if (raw['latest.academics.program_available.biological']) {
-      programs.push('Biology');
-    }
-
-    if (raw['latest.academics.program_available.psychology']) {
-      programs.push('Psychology');
-    }
-
-    if (raw['latest.academics.program_available.education']) {
-      programs.push('Education');
-    }
-
-    return {
-      name: raw['school.name'],
-      city: raw['school.city'],
-      state: raw['school.state'],
-      website: raw['school.school_url']
-        ? `https://${raw['school.school_url'].replace(/^https?:\/\//, '')}`
-        : '',
-      netPrice:
-        raw['latest.cost.avg_net_price.overall'],
-      acceptanceRate:
-        raw['latest.admissions.admission_rate.overall'],
-      satAverage:
-        raw['latest.admissions.sat_scores.average.overall'],
-      size:
-        raw['latest.student.size'],
-      graduationRate:
-        raw['latest.completion.rate_suppressed.overall'],
-      diversity:
-        raw['latest.student.demographics.race_ethnicity.minority'],
-      earnings:
-        raw['latest.earnings.10_yrs_after_entry.median'],
-      programs
-    };
-
-  } catch {
-    return null;
-  }
-}
-
-function scoreCollege(college) {
-  let score = 50;
-
-  const factors = [];
-
-  if (
-    college.programs.includes(state.answers.major)
-  ) {
-    score += 15;
-
-    factors.push({
-      label: state.answers.major,
-      className: 'factor-major'
-    });
-  }
-
-  const budgetMax = getBudgetMax(state.answers.budget);
-
-  if (
-    college.netPrice &&
-    college.netPrice <= budgetMax
-  ) {
-    score += 10;
-
-    factors.push({
-      label: 'Affordable',
-      className: 'factor-budget'
-    });
-  }
-
-  if (
-    state.answers.diversity === 'Very important' &&
-    college.diversity > 0.6
-  ) {
-    score += 6;
-
-    factors.push({
-      label: 'Diverse Campus',
-      className: 'factor-diversity'
-    });
-  }
-
-  if (
-    state.answers.internships === 'Very important' &&
-    college.earnings > 80000
-  ) {
-    score += 8;
-
-    factors.push({
-      label: 'Strong Career Outcomes',
-      className: 'factor-internship'
-    });
-  }
-
-  if (
-    matchesSizePreference(
-      college.size,
-      state.answers.size
-    )
-  ) {
-    score += 6;
-
-    factors.push({
-      label: 'Ideal Size',
-      className: 'factor-size'
-    });
-  }
-
-  score = Math.max(45, Math.min(99, score));
-
-  const admissionsCategory =
-    classifyAdmissions(
-      getNumericGPA(state.answers.gpa),
-      college.acceptanceRate
-    );
-
-  return {
-    ...college,
-    image: getCampusImage(college.name),
-    matchScore: score,
-    admissionsCategory,
-    factors,
-    explanation:
-      generateExplanation(
-        college,
-        score,
-        admissionsCategory
-      )
-  };
-}
-
-function generateExplanation(
-  college,
-  score,
-  category
-) {
-  return `
-    ${college.name} is a strong fit because it aligns with your interest in ${state.answers.major}.
-    The school matches several of your preferences including campus size, affordability,
-    and career outcomes. Based on your academic profile, this school is considered
-    a ${category.toLowerCase()} option.
-  `;
-}
-
-function renderResults() {
-  const grid = $('results-grid');
-
-  grid.innerHTML = '';
-
-  state.results.forEach((college, index) => {
-
-    const card = document.createElement('div');
-
-    card.className = 'college-card';
-
-    const badgeClass =
-      college.matchScore >= 90
-        ? 'match-high'
-        : college.matchScore >= 75
-        ? 'match-med'
-        : 'match-low';
+    card.dataset.id = school.id;
 
     card.innerHTML = `
       <div class="card-layout">
-
+        <!-- Left: text content -->
         <div class="card-content">
-
-          <div class="card-rank">
-            #${index + 1} Recommended Match
-          </div>
-
+          <div class="card-rank">${rankLabels[idx]}</div>
           <div class="card-header">
-
             <div>
-              <div class="card-name">
-                ${college.name}
-              </div>
-
-              <div class="card-location">
-                ${college.city}, ${college.state}
-              </div>
+              <div class="card-name">${school.name}</div>
+              <div class="card-location">${school.location}</div>
             </div>
-
-            <div class="match-badge ${badgeClass}">
-              <span class="pct">
-                ${college.matchScore}%
-              </span>
-
-              <span class="pct-label">
-                Match
-              </span>
-
-              <span class="match-category">
-                ${college.admissionsCategory}
-              </span>
+            <div class="match-badge ${matchClass}">
+              <span class="pct">${pct}%</span>
+              <span class="pct-label">match</span>
+              <span class="match-category">${matchCategory}</span>
             </div>
-
           </div>
 
           <hr class="card-divider" />
 
           <div class="why-section">
-
-            <div class="why-label">
-              Why this school fits
+            <div class="why-label">Why this school</div>
+            <div class="why-text why-loading" id="why-text-${idx}">
+              ${ANTHROPIC_API_KEY !== 'YOUR_ANTHROPIC_API_KEY_HERE'
+                ? 'Generating personalized explanation...'
+                : buildFallbackExplanation(school, pct, matchCategory)}
             </div>
-
-            <div class="why-text">
-              ${college.explanation}
-            </div>
-
             <div class="why-factors">
-
-              ${college.factors.map((factor) => `
-                <span class="factor-chip ${factor.className}">
-                  ${factor.label}
-                </span>
-              `).join('')}
-
+              ${chips.map(c => `<span class="factor-chip ${c.cls}">${c.label}</span>`).join('')}
             </div>
-
           </div>
 
           <div class="card-stats">
+            <div class="stat-item">
+              <span class="stat-label">Tuition</span>
+              <span class="stat-value">${school.displayTuition}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Acceptance Rate</span>
+              <span class="stat-value">${school.displayAcceptance}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Graduation Rate</span>
+              <span class="stat-value">${school.displayGradRate}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Median Earnings</span>
+              <span class="stat-value">${school.displayEarnings}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Enrollment</span>
+              <span class="stat-value">${school.displaySize}</span>
+            </div>
+          </div>
 
-            ${renderStat(
-              'Net Price',
-              formatCurrency(college.netPrice)
-            )}
-
-            ${renderStat(
-              'Acceptance',
-              formatPercent(college.acceptanceRate)
-            )}
-
-            ${renderStat(
-              'Graduation',
-              formatPercent(college.graduationRate)
-            )}
-
-            ${renderStat(
-              'Earnings',
-              formatCurrency(college.earnings)
-            )}
-
+          <div class="card-tags">
+            ${(school.topPrograms.length
+              ? school.topPrograms.map(p => `<span class="tag">${p}</span>`).join('')
+              : '<span class="tag">Liberal Arts</span>')}
+            <span class="tag">${school.sizeTier.charAt(0).toUpperCase() + school.sizeTier.slice(1)} campus</span>
+            ${school.diversityScore >= 50 ? '<span class="tag">Diverse campus</span>' : ''}
           </div>
 
           <div class="card-footer">
-
-            <button
-              class="compare-btn ${state.compare.includes(college.name) ? 'comparing' : ''}"
-              onclick="toggleCompare('${college.name}')"
-            >
-              Compare
+            <button class="fb-btn" id="up-${idx}" onclick="vote(${idx}, 'up')">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6l5-5 5 5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Good match
             </button>
-
-            ${college.website
-              ? `
-                <a
-                  class="website-btn"
-                  href="${college.website}"
-                  target="_blank"
-                >
-                  Visit Website
-                </a>
-              `
-              : ''
-            }
-
+            <button class="fb-btn" id="dn-${idx}" onclick="vote(${idx}, 'down')">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 11V1M1 6l5 5 5-5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Not for me
+            </button>
+            <button class="compare-btn" id="cmp-${idx}" onclick="toggleCompare(${idx})">
+              + Compare
+            </button>
+            ${websiteHref
+              ? `<a class="website-btn" href="${websiteHref}" target="_blank" rel="noopener">
+                  <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M1 5.5h9M6.5 1l4 4.5-4 4.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  Website
+                </a>`
+              : ''}
           </div>
-
         </div>
 
+        <!-- Right: campus image -->
         <div class="card-image">
-
-          ${college.image
-            ? `
-              <img
-                src="${college.image}"
-                alt="${college.name}"
-              />
-            `
-            : `
-              <div class="card-image-placeholder">
-                🎓
-              </div>
-            `
-          }
-
+          ${imgUrl
+            ? `<img
+                src="${imgUrl}"
+                alt="${school.name} campus"
+                loading="lazy"
+                referrerpolicy="no-referrer"
+                onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+              /><div class="card-image-placeholder" style="display:none;background:${getPlaceholderGradient(school.name)}">🏛️</div>`
+            : `<div class="card-image-placeholder" style="background:${getPlaceholderGradient(school.name)}">🏛️</div>`}
         </div>
-
-      </div>
-    `;
->>>>>>> 981ebb6 (Push)
+      </div>`;
 
     grid.appendChild(card);
   });
 
-<<<<<<< HEAD
-  // Build star rating
+  // Remove loading class from why-texts if no AI key
+  if (ANTHROPIC_API_KEY === 'YOUR_ANTHROPIC_API_KEY_HERE') {
+    document.querySelectorAll('.why-loading').forEach(el => el.classList.remove('why-loading'));
+  }
+}
+
+/* ─── Fallback Explanation (no AI key) ──────────────────────────── */
+function buildFallbackExplanation(school, pct, matchCategory) {
+  const majorLabels = { stem: 'STEM programs', business: 'business programs', liberal_arts: 'liberal arts programs', arts: 'arts programs', health: 'health sciences programs' };
+  const gpaRank = { high: 3, med_high: 2, medium: 1, low: 0 };
+  const gpaDiff = (gpaRank[answers.gpa] ?? 1) - (gpaRank[school.gpaTier] ?? 1);
+
+  const programNote = school.topPrograms.length
+    ? `${school.name} is particularly strong in ${school.topPrograms.slice(0, 2).join(' and ')}, aligning with your interest in ${majorLabels[answers.major] || 'your chosen field'}.`
+    : `${school.name} in ${school.location} aligns well with your interest in ${majorLabels[answers.major] || 'your field of study'}.`;
+
+  let gpaNote;
+  if (gpaDiff >= 1) gpaNote = `With your GPA, this is a solid safety school where you're likely to be competitive.`;
+  else if (gpaDiff === 0) gpaNote = `Your GPA closely matches the typical admitted student, making this a realistic target school.`;
+  else gpaNote = `This is a reach school given your GPA — strong essays and extracurriculars will be important.`;
+
+  return `${programNote} ${gpaNote}`;
+}
+
+/* ─── Feedback Interactions ──────────────────────────────────────── */
+
+// Tracks the order in which cards were upvoted, so promoted cards
+// stack at the top in chronological click order (first clicked = highest).
+const upvoteOrder = [];
+
+function vote(idx, dir) {
+  const grid = document.getElementById('results-grid');
+  const card = grid.querySelector(`.college-card[data-id="${resultsData[idx]?.id || idx}"]`);
+  if (!card) return;
+
+  // Prevent voting on the same card twice
+  if (card.dataset.voted) return;
+  card.dataset.voted = dir;
+
+  if (dir === 'down') {
+    // ── "Not for me" — animate out then remove from DOM ────────────
+    card.classList.add('card-removing');
+    card.addEventListener('animationend', () => {
+      card.remove();
+      // Also remove from compareSet if it was selected
+      const schoolId = resultsData[idx]?.id || idx;
+      if (compareSet.has(schoolId)) {
+        compareSet.delete(schoolId);
+        const count = compareSet.size;
+        document.getElementById('compare-count').textContent = count;
+        document.getElementById('btn-compare-bar').style.display = count >= 2 ? 'inline-flex' : 'none';
+      }
+    }, { once: true });
+
+  } else {
+    // ── "Good match" — animate out of position, move to top ────────
+    // Record this card's idx in upvote order (first clicked = index 0)
+    upvoteOrder.push(idx);
+
+    card.classList.add('card-promoting');
+    card.addEventListener('animationend', () => {
+      card.classList.remove('card-promoting');
+      card.classList.add('card-promoted');
+
+      // Insert at the correct position among already-promoted cards.
+      // upvoteOrder.length - 1 is this card's rank (0 = first promoted).
+      const rank = upvoteOrder.indexOf(idx); // position in upvote history
+      const promotedCards = grid.querySelectorAll('.card-promoted');
+
+      if (rank === 0 || promotedCards.length <= 1) {
+        // First promoted card — goes to the very top
+        grid.insertBefore(card, grid.firstChild);
+      } else {
+        // Insert after the (rank-1)th promoted card
+        const sibling = promotedCards[rank - 1];
+        if (sibling && sibling !== card) {
+          sibling.after(card);
+        } else {
+          grid.insertBefore(card, grid.firstChild);
+        }
+      }
+
+      // Trigger the drop-in animation after repositioning
+      requestAnimationFrame(() => {
+        card.classList.add('card-drop-in');
+        card.addEventListener('animationend', () => {
+          card.classList.remove('card-drop-in');
+        }, { once: true });
+      });
+
+      // Mark the upvote button as active (locked in)
+      const up = document.getElementById('up-' + idx);
+      if (up) up.classList.add('voted-up');
+    }, { once: true });
+  }
+}
+
+function buildStarRating() {
   const starRow = document.getElementById('star-row');
   starRow.innerHTML = '';
   document.getElementById('feedback-thanks').style.display = 'none';
@@ -1153,342 +1158,183 @@ function renderResults() {
     btn.addEventListener('click', () => rateStar(i));
     starRow.appendChild(btn);
   }
-
-  showScreen('results');
-}
-
-/* ─── Feedback Interactions ──────────────────────────────────────── */
-function vote(idx, dir) {
-  const up = document.getElementById('up-' + idx);
-  const dn = document.getElementById('dn-' + idx);
-  up.classList.remove('voted-up', 'voted-dn');
-  dn.classList.remove('voted-up', 'voted-dn');
-  if (dir === 'up') up.classList.add('voted-up');
-  else              dn.classList.add('voted-dn');
 }
 
 function rateStar(n) {
   for (let i = 1; i <= 5; i++) {
-    const s = document.getElementById('star-' + i);
-    s.classList.toggle('lit', i <= n);
+    document.getElementById('star-' + i).classList.toggle('lit', i <= n);
   }
   setTimeout(() => {
     document.getElementById('feedback-thanks').style.display = 'block';
   }, 300);
 }
 
+/* ─── Compare Feature ────────────────────────────────────────────── */
+function toggleCompare(idx) {
+  const school = resultsData[idx];
+  if (!school) return;
+  const id = school.id || idx;
+  const btn = document.getElementById('cmp-' + idx);
+
+  if (compareSet.has(id)) {
+    compareSet.delete(id);
+    btn.textContent = '+ Compare';
+    btn.classList.remove('comparing');
+  } else {
+    if (compareSet.size >= 3) {
+      alert('You can compare up to 3 schools at a time. Deselect one first.');
+      return;
+    }
+    compareSet.add(id);
+    btn.textContent = '✓ Comparing';
+    btn.classList.add('comparing');
+  }
+
+  // Update nav bar compare button
+  const count = compareSet.size;
+  const barBtn = document.getElementById('btn-compare-bar');
+  document.getElementById('compare-count').textContent = count;
+  barBtn.style.display = count >= 2 ? 'inline-flex' : 'none';
+}
+
+function openCompareModal() {
+  const selectedSchools = resultsData.filter(s => compareSet.has(s.id || resultsData.indexOf(s)));
+  if (selectedSchools.length < 2) {
+    alert('Select at least 2 schools to compare.');
+    return;
+  }
+  renderCompareModal(selectedSchools);
+  document.getElementById('compare-modal').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeCompareModal() {
+  document.getElementById('compare-modal').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+function handleModalBackdrop(e) {
+  if (e.target === document.getElementById('compare-modal')) closeCompareModal();
+}
+
+function renderCompareModal(schools) {
+  const body = document.getElementById('compare-modal-body');
+
+  const rows = [
+    { label: 'Match Score',      key: s => `<strong>${s.score}%</strong> — ${getMatchCategory(s.score, s)}`, highlight: true },
+    { label: 'Location',         key: s => s.location },
+    { label: 'Tuition',          key: s => s.displayTuition },
+    { label: 'Avg Net Price',    key: s => s.netPrice ? '$' + s.netPrice.toLocaleString() + '/yr' : 'N/A' },
+    { label: 'Acceptance Rate',  key: s => s.displayAcceptance },
+    { label: 'Graduation Rate',  key: s => s.displayGradRate },
+    { label: 'Enrollment',       key: s => s.displaySize },
+    { label: 'Median Earnings',  key: s => s.displayEarnings },
+    { label: 'Diversity Index',  key: s => s.diversityScore + '%' },
+    { label: 'Top Programs',     key: s => s.topPrograms.join(', ') || 'N/A' },
+    { label: 'Campus Size',      key: s => s.sizeTier.charAt(0).toUpperCase() + s.sizeTier.slice(1) },
+    { label: 'Region',           key: s => s.region.charAt(0).toUpperCase() + s.region.slice(1) },
+    { label: 'Weather',          key: s => s.weatherTier.charAt(0).toUpperCase() + s.weatherTier.slice(1) },
+  ];
+
+  let html = `<table class="compare-table">
+    <thead>
+      <tr>
+        <th></th>
+        ${schools.map(s => {
+          const imgUrl = getCampusImage(s.name);
+          return `<th>
+            ${imgUrl ? `<img class="compare-school-img" src="${imgUrl}" alt="${s.name}" referrerpolicy="no-referrer" onerror="this.style.display='none'" />` : ''}
+            <div class="compare-school-name">${s.name}</div>
+            <div class="compare-school-loc">${s.location}</div>
+          </th>`;
+        }).join('')}
+      </tr>
+    </thead>
+    <tbody>`;
+
+  rows.forEach(row => {
+    const values = schools.map(s => row.key(s));
+    // Find best numeric value for highlighting
+    const numericVals = schools.map(s => {
+      const raw = row.key(s).replace(/<[^>]+>/g, '').replace(/[^0-9.]/g, '');
+      return parseFloat(raw) || null;
+    });
+    const maxVal = Math.max(...numericVals.filter(Boolean));
+    const minVal = Math.min(...numericVals.filter(Boolean));
+
+    html += `<tr>
+      <td>${row.label}</td>
+      ${values.map((val, i) => {
+        const num = numericVals[i];
+        let cls = '';
+        // Acceptance rate: lower is more selective (highlight lowest)
+        if (row.label === 'Acceptance Rate' && num === minVal && minVal !== maxVal) cls = 'compare-highlight';
+        // Match score, grad rate, earnings, diversity: higher = better
+        else if (['Match Score','Graduation Rate','Median Earnings','Diversity Index'].includes(row.label)
+          && num === maxVal && maxVal !== minVal) cls = 'compare-highlight';
+        // Tuition / net price: lower = better
+        else if (['Tuition','Avg Net Price'].includes(row.label) && num === minVal && minVal !== maxVal) cls = 'compare-highlight';
+        return `<td class="${cls}">${val}</td>`;
+      }).join('')}
+    </tr>`;
+  });
+
+  html += `</tbody></table>`;
+  body.innerHTML = html;
+}
+
 /* ─── Restart ────────────────────────────────────────────────────── */
 function restart() {
   currentQ = 0;
   Object.keys(answers).forEach(k => delete answers[k]);
+  resultsData = [];
+  compareSet.clear();
+  upvoteOrder.length = 0;
+  apiCache = {};
+  document.getElementById('btn-compare-bar').style.display = 'none';
+  closeCompareModal();
   showScreen('landing');
 }
-=======
-  updateCompareBar();
 
-  renderStars();
+/* ════════════════════════════════════════════════════════════════════
+   FALLBACK SCHOOL DATA
+   Used when the College Scorecard API key is not configured.
+   All data reflects publicly available information.
+   ════════════════════════════════════════════════════════════════════ */
+function getFallbackSchools() {
+  return [
+    // ── Northeast ──
+    { id: 'mit', name: 'MIT', city: 'Cambridge', state: 'MA', location: 'Cambridge, MA', website: 'web.mit.edu', region: 'northeast', sizeTier: 'medium', budgetTier: 'high', gpaTier: 'high', vibeTier: 'academic', weatherTier: 'cold', diversityScore: 55, admissionRate: 0.04, netPrice: 17000, ownership: 2, studentSize: 11500, satMath: 790, satRead: 760, actMid: 35, gradRate: 0.94, earnings: 118000, programMap: { 'Computer Science': 0.35, 'Engineering': 0.40, 'Biology/Life Sci': 0.08 }, topPrograms: ['Computer Science', 'Engineering', 'Biology/Life Sci'], displayTuition: '$57,986', displayAcceptance: '4%', displayGradRate: '94%', displayEarnings: '$118,000', displaySize: '11,500 students' },
+    { id: 'harvard', name: 'Harvard University', city: 'Cambridge', state: 'MA', location: 'Cambridge, MA', website: 'harvard.edu', region: 'northeast', sizeTier: 'medium', budgetTier: 'high', gpaTier: 'high', vibeTier: 'academic', weatherTier: 'cold', diversityScore: 58, admissionRate: 0.03, netPrice: 15000, ownership: 2, studentSize: 20000, gradRate: 0.97, earnings: 95000, programMap: { 'Liberal Arts': 0.30, 'Biology/Life Sci': 0.15, 'Social Sciences': 0.20 }, topPrograms: ['Liberal Arts', 'Social Sciences', 'Biology/Life Sci'], displayTuition: '$57,261', displayAcceptance: '3%', displayGradRate: '97%', displayEarnings: '$95,000', displaySize: '20,000 students' },
+    { id: 'yale', name: 'Yale University', city: 'New Haven', state: 'CT', location: 'New Haven, CT', website: 'yale.edu', region: 'northeast', sizeTier: 'medium', budgetTier: 'high', gpaTier: 'high', vibeTier: 'balanced', weatherTier: 'cold', diversityScore: 56, admissionRate: 0.05, netPrice: 16000, ownership: 2, studentSize: 13600, gradRate: 0.96, earnings: 90000, programMap: { 'Liberal Arts': 0.35, 'Arts': 0.12, 'Social Sciences': 0.18 }, topPrograms: ['Liberal Arts', 'Social Sciences', 'Arts'], displayTuition: '$62,250', displayAcceptance: '5%', displayGradRate: '96%', displayEarnings: '$90,000', displaySize: '13,600 students' },
+    { id: 'columbia', name: 'Columbia University', city: 'New York', state: 'NY', location: 'New York, NY', website: 'columbia.edu', region: 'northeast', sizeTier: 'medium', budgetTier: 'high', gpaTier: 'high', vibeTier: 'balanced', weatherTier: 'seasons', diversityScore: 68, admissionRate: 0.04, netPrice: 15000, ownership: 2, studentSize: 31000, gradRate: 0.95, earnings: 92000, programMap: { 'Liberal Arts': 0.28, 'Business': 0.12, 'Engineering': 0.14 }, topPrograms: ['Liberal Arts', 'Engineering', 'Business'], displayTuition: '$65,524', displayAcceptance: '4%', displayGradRate: '95%', displayEarnings: '$92,000', displaySize: '31,000 students' },
+    { id: 'nyu', name: 'New York University', city: 'New York', state: 'NY', location: 'New York, NY', website: 'nyu.edu', region: 'northeast', sizeTier: 'large', budgetTier: 'medium', gpaTier: 'med_high', vibeTier: 'social', weatherTier: 'seasons', diversityScore: 65, admissionRate: 0.13, netPrice: 33000, ownership: 2, studentSize: 59000, gradRate: 0.86, earnings: 70000, programMap: { 'Arts': 0.18, 'Business': 0.22, 'Liberal Arts': 0.20 }, topPrograms: ['Business', 'Arts', 'Liberal Arts'], displayTuition: '$58,168', displayAcceptance: '13%', displayGradRate: '86%', displayEarnings: '$70,000', displaySize: '59,000 students' },
+    { id: 'boston-univ', name: 'Boston University', city: 'Boston', state: 'MA', location: 'Boston, MA', website: 'bu.edu', region: 'northeast', sizeTier: 'large', budgetTier: 'medium', gpaTier: 'med_high', vibeTier: 'balanced', weatherTier: 'cold', diversityScore: 52, admissionRate: 0.19, netPrice: 35000, ownership: 2, studentSize: 37000, gradRate: 0.87, earnings: 65000, programMap: { 'Health': 0.18, 'Business': 0.20, 'Engineering': 0.12 }, topPrograms: ['Health', 'Business', 'Engineering'], displayTuition: '$60,000', displayAcceptance: '19%', displayGradRate: '87%', displayEarnings: '$65,000', displaySize: '37,000 students' },
+    { id: 'northeastern', name: 'Northeastern University', city: 'Boston', state: 'MA', location: 'Boston, MA', website: 'northeastern.edu', region: 'northeast', sizeTier: 'medium', budgetTier: 'medium', gpaTier: 'med_high', vibeTier: 'balanced', weatherTier: 'cold', diversityScore: 50, admissionRate: 0.20, netPrice: 36000, ownership: 2, studentSize: 22000, gradRate: 0.91, earnings: 78000, programMap: { 'Computer Science': 0.22, 'Business': 0.18, 'Engineering': 0.20 }, topPrograms: ['Computer Science', 'Engineering', 'Business'], displayTuition: '$59,000', displayAcceptance: '20%', displayGradRate: '91%', displayEarnings: '$78,000', displaySize: '22,000 students' },
+    // ── Southeast ──
+    { id: 'duke', name: 'Duke University', city: 'Durham', state: 'NC', location: 'Durham, NC', website: 'duke.edu', region: 'southeast', sizeTier: 'medium', budgetTier: 'high', gpaTier: 'high', vibeTier: 'balanced', weatherTier: 'seasons', diversityScore: 55, admissionRate: 0.06, netPrice: 20000, ownership: 2, studentSize: 17000, gradRate: 0.95, earnings: 88000, programMap: { 'Health': 0.20, 'Engineering': 0.15, 'Social Sciences': 0.18 }, topPrograms: ['Health', 'Social Sciences', 'Engineering'], displayTuition: '$60,244', displayAcceptance: '6%', displayGradRate: '95%', displayEarnings: '$88,000', displaySize: '17,000 students' },
+    { id: 'vanderbilt', name: 'Vanderbilt University', city: 'Nashville', state: 'TN', location: 'Nashville, TN', website: 'vanderbilt.edu', region: 'southeast', sizeTier: 'medium', budgetTier: 'high', gpaTier: 'high', vibeTier: 'social', weatherTier: 'seasons', diversityScore: 50, admissionRate: 0.07, netPrice: 22000, ownership: 2, studentSize: 13000, gradRate: 0.93, earnings: 82000, programMap: { 'Health': 0.15, 'Business': 0.18, 'Engineering': 0.14 }, topPrograms: ['Health', 'Business', 'Engineering'], displayTuition: '$60,348', displayAcceptance: '7%', displayGradRate: '93%', displayEarnings: '$82,000', displaySize: '13,000 students' },
+    { id: 'emory', name: 'Emory University', city: 'Atlanta', state: 'GA', location: 'Atlanta, GA', website: 'emory.edu', region: 'southeast', sizeTier: 'medium', budgetTier: 'high', gpaTier: 'high', vibeTier: 'academic', weatherTier: 'warm', diversityScore: 62, admissionRate: 0.11, netPrice: 28000, ownership: 2, studentSize: 14000, gradRate: 0.91, earnings: 75000, programMap: { 'Health': 0.28, 'Business': 0.16, 'Liberal Arts': 0.22 }, topPrograms: ['Health', 'Liberal Arts', 'Business'], displayTuition: '$57,592', displayAcceptance: '11%', displayGradRate: '91%', displayEarnings: '$75,000', displaySize: '14,000 students' },
+    { id: 'unc', name: 'UNC Chapel Hill', city: 'Chapel Hill', state: 'NC', location: 'Chapel Hill, NC', website: 'unc.edu', region: 'southeast', sizeTier: 'large', budgetTier: 'low', gpaTier: 'med_high', vibeTier: 'balanced', weatherTier: 'seasons', diversityScore: 42, admissionRate: 0.19, netPrice: 12000, ownership: 1, studentSize: 30000, gradRate: 0.91, earnings: 60000, programMap: { 'Health': 0.18, 'Liberal Arts': 0.22, 'Business': 0.16 }, topPrograms: ['Health', 'Liberal Arts', 'Business'], displayTuition: '$7,008 (in-state)', displayAcceptance: '19%', displayGradRate: '91%', displayEarnings: '$60,000', displaySize: '30,000 students' },
+    { id: 'uva', name: 'University of Virginia', city: 'Charlottesville', state: 'VA', location: 'Charlottesville, VA', website: 'virginia.edu', region: 'southeast', sizeTier: 'large', budgetTier: 'low', gpaTier: 'high', vibeTier: 'balanced', weatherTier: 'seasons', diversityScore: 40, admissionRate: 0.21, netPrice: 14000, ownership: 1, studentSize: 25000, gradRate: 0.94, earnings: 65000, programMap: { 'Business': 0.20, 'Liberal Arts': 0.25, 'Engineering': 0.14 }, topPrograms: ['Business', 'Liberal Arts', 'Engineering'], displayTuition: '$17,400 (in-state)', displayAcceptance: '21%', displayGradRate: '94%', displayEarnings: '$65,000', displaySize: '25,000 students' },
+    // ── Midwest ──
+    { id: 'uchicago', name: 'University of Chicago', city: 'Chicago', state: 'IL', location: 'Chicago, IL', website: 'uchicago.edu', region: 'midwest', sizeTier: 'medium', budgetTier: 'high', gpaTier: 'high', vibeTier: 'academic', weatherTier: 'cold', diversityScore: 55, admissionRate: 0.07, netPrice: 20000, ownership: 2, studentSize: 17000, gradRate: 0.95, earnings: 86000, programMap: { 'Liberal Arts': 0.32, 'Economics': 0.15, 'Social Sciences': 0.20 }, topPrograms: ['Liberal Arts', 'Social Sciences', 'Business'], displayTuition: '$62,238', displayAcceptance: '7%', displayGradRate: '95%', displayEarnings: '$86,000', displaySize: '17,000 students' },
+    { id: 'northwestern', name: 'Northwestern University', city: 'Evanston', state: 'IL', location: 'Evanston, IL', website: 'northwestern.edu', region: 'midwest', sizeTier: 'medium', budgetTier: 'high', gpaTier: 'high', vibeTier: 'balanced', weatherTier: 'cold', diversityScore: 52, admissionRate: 0.07, netPrice: 22000, ownership: 2, studentSize: 22000, gradRate: 0.95, earnings: 85000, programMap: { 'Engineering': 0.18, 'Business': 0.16, 'Arts': 0.12 }, topPrograms: ['Engineering', 'Business', 'Arts'], displayTuition: '$63,468', displayAcceptance: '7%', displayGradRate: '95%', displayEarnings: '$85,000', displaySize: '22,000 students' },
+    { id: 'umich', name: 'University of Michigan', city: 'Ann Arbor', state: 'MI', location: 'Ann Arbor, MI', website: 'umich.edu', region: 'midwest', sizeTier: 'large', budgetTier: 'medium', gpaTier: 'med_high', vibeTier: 'balanced', weatherTier: 'cold', diversityScore: 42, admissionRate: 0.20, netPrice: 18000, ownership: 1, studentSize: 47000, gradRate: 0.92, earnings: 72000, programMap: { 'Engineering': 0.20, 'Business': 0.18, 'Liberal Arts': 0.18 }, topPrograms: ['Engineering', 'Business', 'Liberal Arts'], displayTuition: '$16,736 (in-state)', displayAcceptance: '20%', displayGradRate: '92%', displayEarnings: '$72,000', displaySize: '47,000 students' },
+    { id: 'purdue', name: 'Purdue University', city: 'West Lafayette', state: 'IN', location: 'West Lafayette, IN', website: 'purdue.edu', region: 'midwest', sizeTier: 'large', budgetTier: 'low', gpaTier: 'med_high', vibeTier: 'academic', weatherTier: 'cold', diversityScore: 38, admissionRate: 0.60, netPrice: 13000, ownership: 1, studentSize: 50000, gradRate: 0.83, earnings: 68000, programMap: { 'Engineering': 0.35, 'Computer Science': 0.15, 'Business': 0.12 }, topPrograms: ['Engineering', 'Computer Science', 'Business'], displayTuition: '$9,992 (in-state)', displayAcceptance: '60%', displayGradRate: '83%', displayEarnings: '$68,000', displaySize: '50,000 students' },
+    // ── South/Southwest ──
+    { id: 'rice', name: 'Rice University', city: 'Houston', state: 'TX', location: 'Houston, TX', website: 'rice.edu', region: 'south', sizeTier: 'small', budgetTier: 'high', gpaTier: 'high', vibeTier: 'community', weatherTier: 'warm', diversityScore: 60, admissionRate: 0.09, netPrice: 20000, ownership: 2, studentSize: 4000, gradRate: 0.93, earnings: 86000, programMap: { 'Engineering': 0.30, 'Liberal Arts': 0.22, 'Computer Science': 0.14 }, topPrograms: ['Engineering', 'Liberal Arts', 'Computer Science'], displayTuition: '$54,960', displayAcceptance: '9%', displayGradRate: '93%', displayEarnings: '$86,000', displaySize: '4,000 students' },
+    { id: 'utaustin', name: 'UT Austin', city: 'Austin', state: 'TX', location: 'Austin, TX', website: 'utexas.edu', region: 'south', sizeTier: 'large', budgetTier: 'low', gpaTier: 'med_high', vibeTier: 'social', weatherTier: 'warm', diversityScore: 52, admissionRate: 0.31, netPrice: 14000, ownership: 1, studentSize: 52000, gradRate: 0.87, earnings: 65000, programMap: { 'Engineering': 0.18, 'Business': 0.22, 'Liberal Arts': 0.20 }, topPrograms: ['Business', 'Engineering', 'Liberal Arts'], displayTuition: '$11,248 (in-state)', displayAcceptance: '31%', displayGradRate: '87%', displayEarnings: '$65,000', displaySize: '52,000 students' },
+    { id: 'georgia-tech', name: 'Georgia Tech', city: 'Atlanta', state: 'GA', location: 'Atlanta, GA', website: 'gatech.edu', region: 'southeast', sizeTier: 'large', budgetTier: 'low', gpaTier: 'high', vibeTier: 'academic', weatherTier: 'warm', diversityScore: 48, admissionRate: 0.17, netPrice: 12000, ownership: 1, studentSize: 26000, gradRate: 0.90, earnings: 90000, programMap: { 'Engineering': 0.45, 'Computer Science': 0.25, 'Business': 0.10 }, topPrograms: ['Engineering', 'Computer Science', 'Business'], displayTuition: '$10,258 (in-state)', displayAcceptance: '17%', displayGradRate: '90%', displayEarnings: '$90,000', displaySize: '26,000 students' },
+    // ── West Coast ──
+    { id: 'stanford', name: 'Stanford University', city: 'Stanford', state: 'CA', location: 'Stanford, CA', website: 'stanford.edu', region: 'west', sizeTier: 'medium', budgetTier: 'high', gpaTier: 'high', vibeTier: 'balanced', weatherTier: 'warm', diversityScore: 62, admissionRate: 0.04, netPrice: 16000, ownership: 2, studentSize: 17000, gradRate: 0.96, earnings: 110000, programMap: { 'Engineering': 0.30, 'Computer Science': 0.25, 'Business': 0.12 }, topPrograms: ['Computer Science', 'Engineering', 'Business'], displayTuition: '$56,169', displayAcceptance: '4%', displayGradRate: '96%', displayEarnings: '$110,000', displaySize: '17,000 students' },
+    { id: 'caltech', name: 'Caltech', city: 'Pasadena', state: 'CA', location: 'Pasadena, CA', website: 'caltech.edu', region: 'west', sizeTier: 'small', budgetTier: 'high', gpaTier: 'high', vibeTier: 'academic', weatherTier: 'warm', diversityScore: 52, admissionRate: 0.03, netPrice: 18000, ownership: 2, studentSize: 2200, gradRate: 0.93, earnings: 112000, programMap: { 'Engineering': 0.50, 'Computer Science': 0.25, 'Biology/Life Sci': 0.15 }, topPrograms: ['Engineering', 'Computer Science', 'Biology/Life Sci'], displayTuition: '$60,816', displayAcceptance: '3%', displayGradRate: '93%', displayEarnings: '$112,000', displaySize: '2,200 students' },
+    { id: 'ucberkeley', name: 'UC Berkeley', city: 'Berkeley', state: 'CA', location: 'Berkeley, CA', website: 'berkeley.edu', region: 'west', sizeTier: 'large', budgetTier: 'low', gpaTier: 'med_high', vibeTier: 'academic', weatherTier: 'warm', diversityScore: 66, admissionRate: 0.12, netPrice: 13000, ownership: 1, studentSize: 43000, gradRate: 0.92, earnings: 82000, programMap: { 'Engineering': 0.22, 'Computer Science': 0.18, 'Business': 0.12 }, topPrograms: ['Engineering', 'Computer Science', 'Business'], displayTuition: '$14,312 (in-state)', displayAcceptance: '12%', displayGradRate: '92%', displayEarnings: '$82,000', displaySize: '43,000 students' },
+    { id: 'ucla', name: 'UCLA', city: 'Los Angeles', state: 'CA', location: 'Los Angeles, CA', website: 'ucla.edu', region: 'west', sizeTier: 'large', budgetTier: 'low', gpaTier: 'med_high', vibeTier: 'social', weatherTier: 'warm', diversityScore: 68, admissionRate: 0.09, netPrice: 14000, ownership: 1, studentSize: 46000, gradRate: 0.91, earnings: 75000, programMap: { 'Arts': 0.12, 'Engineering': 0.18, 'Health': 0.16 }, topPrograms: ['Engineering', 'Health', 'Arts'], displayTuition: '$13,239 (in-state)', displayAcceptance: '9%', displayGradRate: '91%', displayEarnings: '$75,000', displaySize: '46,000 students' },
+    { id: 'ucsd', name: 'UC San Diego', city: 'La Jolla', state: 'CA', location: 'La Jolla, CA', website: 'ucsd.edu', region: 'west', sizeTier: 'large', budgetTier: 'low', gpaTier: 'med_high', vibeTier: 'academic', weatherTier: 'warm', diversityScore: 58, admissionRate: 0.24, netPrice: 13500, ownership: 1, studentSize: 40000, gradRate: 0.87, earnings: 72000, programMap: { 'Computer Science': 0.20, 'Engineering': 0.22, 'Biology/Life Sci': 0.18 }, topPrograms: ['Computer Science', 'Engineering', 'Biology/Life Sci'], displayTuition: '$14,388 (in-state)', displayAcceptance: '24%', displayGradRate: '87%', displayEarnings: '$72,000', displaySize: '40,000 students' },
+    { id: 'usc', name: 'USC', city: 'Los Angeles', state: 'CA', location: 'Los Angeles, CA', website: 'usc.edu', region: 'west', sizeTier: 'large', budgetTier: 'high', gpaTier: 'med_high', vibeTier: 'social', weatherTier: 'warm', diversityScore: 60, admissionRate: 0.12, netPrice: 35000, ownership: 2, studentSize: 47000, gradRate: 0.92, earnings: 76000, programMap: { 'Business': 0.22, 'Arts': 0.18, 'Engineering': 0.14 }, topPrograms: ['Business', 'Arts', 'Engineering'], displayTuition: '$65,446', displayAcceptance: '12%', displayGradRate: '92%', displayEarnings: '$76,000', displaySize: '47,000 students' },
+    { id: 'uw', name: 'University of Washington', city: 'Seattle', state: 'WA', location: 'Seattle, WA', website: 'washington.edu', region: 'west', sizeTier: 'large', budgetTier: 'low', gpaTier: 'med_high', vibeTier: 'academic', weatherTier: 'seasons', diversityScore: 52, admissionRate: 0.49, netPrice: 12000, ownership: 1, studentSize: 48000, gradRate: 0.85, earnings: 72000, programMap: { 'Computer Science': 0.18, 'Engineering': 0.20, 'Health': 0.15 }, topPrograms: ['Computer Science', 'Engineering', 'Health'], displayTuition: '$12,076 (in-state)', displayAcceptance: '49%', displayGradRate: '85%', displayEarnings: '$72,000', displaySize: '48,000 students' },
+    { id: 'pepperdine', name: 'Pepperdine University', city: 'Malibu', state: 'CA', location: 'Malibu, CA', website: 'pepperdine.edu', region: 'west', sizeTier: 'small', budgetTier: 'high', gpaTier: 'med_high', vibeTier: 'community', weatherTier: 'warm', diversityScore: 45, admissionRate: 0.37, netPrice: 38000, ownership: 2, studentSize: 8000, gradRate: 0.83, earnings: 62000, programMap: { 'Business': 0.30, 'Liberal Arts': 0.25, 'Health': 0.12 }, topPrograms: ['Business', 'Liberal Arts', 'Health'], displayTuition: '$60,816', displayAcceptance: '37%', displayGradRate: '83%', displayEarnings: '$62,000', displaySize: '8,000 students' },
+    { id: 'santa-clara', name: 'Santa Clara University', city: 'Santa Clara', state: 'CA', location: 'Santa Clara, CA', website: 'scu.edu', region: 'west', sizeTier: 'medium', budgetTier: 'high', gpaTier: 'med_high', vibeTier: 'balanced', weatherTier: 'warm', diversityScore: 52, admissionRate: 0.51, netPrice: 36000, ownership: 2, studentSize: 9000, gradRate: 0.87, earnings: 75000, programMap: { 'Business': 0.28, 'Engineering': 0.22, 'Liberal Arts': 0.20 }, topPrograms: ['Business', 'Engineering', 'Liberal Arts'], displayTuition: '$58,950', displayAcceptance: '51%', displayGradRate: '87%', displayEarnings: '$75,000', displaySize: '9,000 students' },
+  ];
 }
-
-function toggleCompare(name) {
-  const index = state.compare.indexOf(name);
-
-  if (index >= 0) {
-    state.compare.splice(index, 1);
-  } else {
-    state.compare.push(name);
-  }
-
-  renderResults();
-}
-
-function updateCompareBar() {
-  $('compare-count').textContent =
-    state.compare.length;
-
-  $('btn-compare-bar').style.display =
-    state.compare.length >= 2
-      ? 'inline-flex'
-      : 'none';
-}
-
-function openCompareModal() {
-  const selected =
-    state.results.filter((school) =>
-      state.compare.includes(school.name)
-    );
-
-  const body = $('compare-modal-body');
-
-  body.innerHTML = `
-    <table class="compare-table">
-
-      <thead>
-
-        <tr>
-          <th>Metric</th>
-
-          ${selected.map((school) => `
-            <th>
-              ${school.name}
-            </th>
-          `).join('')}
-
-        </tr>
-
-      </thead>
-
-      <tbody>
-
-        ${compareRow(
-          'Match Score',
-          selected.map((s) => `${s.matchScore}%`)
-        )}
-
-        ${compareRow(
-          'Net Price',
-          selected.map((s) =>
-            formatCurrency(s.netPrice)
-          )
-        )}
-
-        ${compareRow(
-          'Acceptance Rate',
-          selected.map((s) =>
-            formatPercent(s.acceptanceRate)
-          )
-        )}
-
-        ${compareRow(
-          'Graduation Rate',
-          selected.map((s) =>
-            formatPercent(s.graduationRate)
-          )
-        )}
-
-        ${compareRow(
-          'Student Population',
-          selected.map((s) =>
-            formatNumber(s.size)
-          )
-        )}
-
-        ${compareRow(
-          'Median Earnings',
-          selected.map((s) =>
-            formatCurrency(s.earnings)
-          )
-        )}
-
-      </tbody>
-
-    </table>
-  `;
-
-  $('compare-modal').style.display = 'flex';
-}
-
-function compareRow(label, values) {
-  return `
-    <tr>
-
-      <td>${label}</td>
-
-      ${values.map((value) => `
-        <td>${value}</td>
-      `).join('')}
-
-    </tr>
-  `;
-}
-
-function closeCompareModal() {
-  $('compare-modal').style.display = 'none';
-}
-
-function handleModalBackdrop(event) {
-  if (event.target.id === 'compare-modal') {
-    closeCompareModal();
-  }
-}
-
-function renderStars() {
-  const row = $('star-row');
-
-  row.innerHTML = '';
-
-  for (let i = 1; i <= 5; i++) {
-
-    const btn = document.createElement('button');
-
-    btn.className = 'star-btn';
-
-    btn.innerHTML = '★';
-
-    if (i <= state.rating) {
-      btn.classList.add('lit');
-    }
-
-    btn.addEventListener('click', () => {
-      state.rating = i;
-
-      renderStars();
-
-      $('feedback-thanks').style.display =
-        'block';
-    });
-
-    row.appendChild(btn);
-  }
-}
-
-function formatCurrency(value) {
-  if (!value) return 'N/A';
-
-  return new Intl.NumberFormat(
-    'en-US',
-    {
-      style: 'currency',
-      currency: 'USD',
-      maximumFractionDigits: 0
-    }
-  ).format(value);
-}
-
-function formatPercent(value) {
-  if (!value) return 'N/A';
-
-  return `${Math.round(value * 100)}%`;
-}
-
-function formatNumber(value) {
-  if (!value) return 'N/A';
-
-  return new Intl.NumberFormat('en-US')
-    .format(value);
-}
-
-function renderStat(label, value) {
-  return `
-    <div>
-
-      <span class="stat-label">
-        ${label}
-      </span>
-
-      <span class="stat-value">
-        ${value}
-      </span>
-
-    </div>
-  `;
-}
-
-function getBudgetMax(answer) {
-  switch (answer) {
-    case 'Under $20,000':
-      return 20000;
-
-    case '$20,000–$35,000':
-      return 35000;
-
-    case '$35,000–$55,000':
-      return 55000;
-
-    default:
-      return Infinity;
-  }
-}
-
-function getNumericGPA(answer) {
-  switch (answer) {
-    case '4.0+':
-      return 4.0;
-
-    case '3.8–3.99':
-      return 3.9;
-
-    case '3.5–3.79':
-      return 3.65;
-
-    case '3.2–3.49':
-      return 3.35;
-
-    default:
-      return 3.0;
-  }
-}
-
-function classifyAdmissions(
-  gpa,
-  acceptanceRate
-) {
-  if (
-    gpa >= 3.8 &&
-    acceptanceRate > 0.25
-  ) {
-    return 'Safety';
-  }
-
-  if (
-    gpa >= 3.5 &&
-    acceptanceRate > 0.10
-  ) {
-    return 'Target';
-  }
-
-  return 'Reach';
-}
-
-function matchesSizePreference(
-  size,
-  preference
-) {
-  if (preference === 'No preference') {
-    return true;
-  }
-
-  if (preference === 'Small') {
-    return size < 5000;
-  }
-
-  if (preference === 'Medium') {
-    return size >= 5000 && size <= 15000;
-  }
-
-  if (preference === 'Large') {
-    return size > 15000;
-  }
-
-  return true;
-}
-
-function getCampusImage(name) {
-  return CAMPUS_IMAGES[name] || '';
-}
-
-function delay(ms) {
-  return new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
-}
-
-document.addEventListener(
-  'DOMContentLoaded',
-  () => {
-
-    renderStars();
-
-    window.startSurvey = startSurvey;
-    window.restart = restart;
-    window.goNext = goNext;
-    window.goBack = goBack;
-    window.toggleCompare = toggleCompare;
-    window.openCompareModal =
-      openCompareModal;
-    window.closeCompareModal =
-      closeCompareModal;
-    window.handleModalBackdrop =
-      handleModalBackdrop;
-  }
-);
->>>>>>> 981ebb6 (Push)
